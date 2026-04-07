@@ -1,0 +1,214 @@
+openapi: 3.0.0
+info:
+  title: V3 Replay Callback API
+  version: '1.0.0'
+  description: >-
+    Re-sends a callback webhook for a completed job so the partner receives it again.
+
+    This is a generic endpoint that works for any V3 product — the product is
+    inferred from the original job.
+
+    Authentication: token-based (SmileID-Token header with JWT from /v3/token).
+
+    Callback URL resolution order:
+      1. `callback_url` from request body (validated against partner's allowed domains)
+      2. `callback_url` stored with the original job
+      3. Partner's default callback URL
+
+paths:
+  /v3/replay/{job_id}:
+    post:
+      summary: Replay a callback for a completed job
+      description: >-
+        Looks up a previously completed job by its TypeID, resolves the callback
+        URL, and re-sends the callback. The job must have reached a
+        terminal state (clear, block, attention, or error) before its callback
+        can be replayed.
+
+        An optional `callback_url` in the request body overrides the stored URL,
+        subject to the partner's callback domain allowlist.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description: TypeID format job identifier with 'job_' prefix.
+          schema:
+            type: string
+            pattern: '^job_[0-9a-z]{26}$'
+            example: 'job_01h2xcejqtf2nbrexx3vqjhp41'
+        - name: SmileID-Partner-ID
+          in: header
+          required: true
+          description: Partner identifier (numeric, 3+ digits).
+          schema:
+            type: string
+            pattern: '^\d{3,}$'
+            example: '1234'
+        - name: SmileID-Token
+          in: header
+          required: true
+          description: JWT token obtained from /v3/token.
+          schema:
+            type: string
+      requestBody:
+        required: false
+        description: >-
+          Optional body to override the callback URL. If omitted, the stored
+          callback URL (from the original job or partner default)
+          is used.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplayCallbackRequest'
+            example:
+              callback_url: 'https://partner.example.com/webhook'
+      responses:
+        '202':
+          description: Callback replay accepted and queued for delivery.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayCallbackResponse'
+              example:
+                status: accepted
+                job_id: job_01h2xcejqtf2nbrexx3vqjhp41
+                user_id: test-user
+                message: Callback replay queued successfully.
+        '400':
+          description: >-
+            Bad Request — invalid job_id format, unrecognised product, or no
+            valid callback URL available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidJobId:
+                  summary: Invalid TypeID format
+                  value:
+                    status: Bad Request
+                    message: '"job_id" must be a valid TypeID with prefix ''job_'''
+                noCallbackUrl:
+                  summary: No callback URL resolvable
+                  value:
+                    status: Bad Request
+                    message: No valid callback URL available
+                unknownProduct:
+                  summary: Product cannot be inferred
+                  value:
+                    status: Bad Request
+                    message: Unable to determine product for this job
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '403':
+          description: >-
+            Forbidden — IP not in allowlist, callback URL not in allowed domains,
+            or security checks failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Forbidden
+                message: You are not authorized to do that.
+        '404':
+          description: >-
+            Not Found — job does not exist, does not belong to this partner, or
+            has no reference entry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                jobNotFound:
+                  summary: Job not found or belongs to another partner
+                  value:
+                    status: Not Found
+                    message: Job not found
+                referenceNotFound:
+                  summary: Reference entry missing for the job
+                  value:
+                    status: Not Found
+                    message: Reference not found for this job
+        '409':
+          description: >-
+            Conflict — job has not yet reached a terminal state. Wait for
+            processing to complete before replaying the callback.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Conflict
+                message: >-
+                  Job is still processing. Callbacks can only be replayed for
+                  completed jobs.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+
+components:
+  schemas:
+    ReplayCallbackRequest:
+      type: object
+      properties:
+        callback_url:
+          type: string
+          format: uri
+          description: >-
+            Override callback URL. Must be on the partner's callback domain
+            allowlist. If omitted, the stored callback URL is used.
+          example: 'https://partner.example.com/webhook'
+    ReplayCallbackResponse:
+      type: object
+      required:
+        - status
+        - job_id
+        - user_id
+        - message
+      properties:
+        status:
+          type: string
+          description: Always 'accepted' for successful replay requests.
+          enum:
+            - accepted
+          example: accepted
+        job_id:
+          type: string
+          description: TypeID format job identifier.
+          example: job_01h2xcejqtf2nbrexx3vqjhp41
+        user_id:
+          type: string
+          description: User ID associated with the job (from partner_params).
+          example: test-user
+        message:
+          type: string
+          description: Human-readable confirmation message.
+          example: Callback replay queued successfully.
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          description: HTTP status text (e.g. Bad Request, Not Found, Conflict).
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable error message.
+          example: '"job_id" must be a valid TypeID with prefix ''job_'''

@@ -1,0 +1,14 @@
+{
+  "name": "@smileidentity/api-reference",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Smile Identity API Reference — OpenAPI specifications",
+  "scripts": {
+    "validate": "spectral lint specs/v3/*.yaml",
+    "bundle": "redocly bundle specs/v3/*.yaml -o bundled/openapi-v3.yaml"
+  },
+  "devDependencies": {
+    "@stoplight/spectral-cli": "^6.14.0",
+    "@redocly/cli": "^1.28.0"
+  }
+}

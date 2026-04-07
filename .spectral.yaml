@@ -1,0 +1,22 @@
+extends:
+  - spectral:oas
+
+rules:
+  # Ensure no internal architecture terms leak into public specs
+  no-internal-references:
+    description: Specs must not reference internal architecture
+    severity: error
+    given: "$..description"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "\\b(DynamoDB|SQS|Lambda|S3|PostgreSQL|pgvector|access_logs|embedding|CDK|Parameter Store)\\b"
+
+  # Require operation IDs
+  operation-operationId: error
+
+  # Require descriptions on operations
+  operation-description: warn
+
+  # Info section requirements
+  info-description: error

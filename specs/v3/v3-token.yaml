@@ -1,0 +1,130 @@
+openapi: 3.0.0
+info:
+  title: v3 Authentication Token API
+  version: '1.0.0'
+  description: >-
+    API for generating v3 authentication tokens.
+    The issued JWT payload includes `policy` as a number (bitmask) representing partner security policies.
+paths:
+  /v3/token:
+    post:
+      summary: Generate v3 Auth Token
+      description: Issues a short-lived JWT for authenticating subsequent v3 API requests.
+      parameters:
+        - name: smileid-partner-id
+          in: header
+          required: true
+          description: >-
+            Your unique partner identifier. Must be a numeric string with at least 3 digits.
+          schema:
+            type: string
+            pattern: '^\d{3,}$'
+            example: '1234'
+        - name: smileid-api-key
+          in: header
+          required: true
+          description: Your partner API key for authentication.
+          schema:
+            type: string
+            example: abcd1234key
+        - name: smileid-user-id
+          in: header
+          required: false
+          description: >-
+            Optional user identifier. If provided, it is included in the JWT payload as `user_id`.
+          schema:
+            type: string
+      requestBody:
+        description: Optional parameters to be included in the generated token.
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                partner_params:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: Key-value metadata for partner reference.
+                  example:
+                    pi: '3.14159265359'
+                product:
+                  type: string
+                  description: The product or service the token will be used for.
+                  enum:
+                    - aml
+                    - basic_kyc
+                    - one_time_aml
+                    - biometric_kyc
+                    - address_verification
+                    - document_verification
+                    - enhanced_document_verification
+                    - enhanced_kyc
+                    - phone_number_verification
+                    - smart_selfie_authentication
+                    - smart_selfie_registration
+                    - smart_selfie_compare
+                  example: smart_selfie_authentication
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token for authenticating subsequent v3 API requests.
+                    example: ey...
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Bad Request
+                message: 'smileid-partner-id header is required.'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '415':
+          description: Unsupported Media Type — request body, if provided, must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: HTTP status text.
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable error description.
+          example: 'smileid-partner-id header is required.'

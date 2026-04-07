@@ -1,0 +1,372 @@
+openapi: 3.0.0
+info:
+  title: V3 Biometric Enrollment API
+  version: '1.0.0'
+  description: >-
+    Async biometric enrollment endpoint (Smart Selfie™ Enrollment).
+    Accepts a selfie image and liveness images, validates at entry, and processes the job
+    asynchronously (passive liveness, active liveness).
+    Returns HTTP 202 with a job_id and user_id to track the result via callback.
+
+    Authentication: token-based (token header from /v3/token).
+
+    At least one of `email` or `phone_number` is required.
+paths:
+  /v3/enroll:
+    post:
+      summary: Submit biometric enrollment
+      operationId: v3BiometricEnrollment
+      description: >-
+        Enrolls a user's biometric selfie for future authentication.
+        The selfie and liveness images are uploaded, validated at entry, then processed
+        asynchronously (passive liveness, active liveness).
+        Results are delivered via callback URL.
+      parameters:
+        - name: SmileID-Partner-ID
+          in: header
+          required: true
+          description: Partner identifier (numeric, 3+ digits).
+          schema:
+            type: string
+            pattern: '^\d{3,}$'
+            example: '1234'
+        - name: SmileID-Token
+          in: header
+          required: true
+          description: JWT token from /v3/token.
+          schema:
+            type: string
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: 'android'
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: '10.4.2'
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
+            Required when your Smile ID account is configured to use SDK/partner secret HMAC
+            authentication.
+          schema:
+            type: string
+            format: date-time
+            example: '2026-03-10T12:00:00.000Z'
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          description: >-
+            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret
+            and the value of SmileID-Timestamp as salt. Required when your Smile ID
+            account is configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            example: '4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2'
+        - name: User-ID
+          in: header
+          required: false
+          description: >-
+            Partner-provided user identifier. If omitted, a TypeID is generated automatically.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BiometricEnrollmentRequest'
+            encoding:
+              selfie_image:
+                contentType: image/jpeg
+              liveness_images:
+                contentType: image/jpeg
+      responses:
+        '202':
+          description: Accepted — job submitted for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: Accepted
+                message: Request accepted and queued for processing.
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingSelfie:
+                  summary: Missing selfie image
+                  value:
+                    status: Bad Request
+                    message: "Required field 'selfie_image' is missing or invalid."
+                insufficientLiveness:
+                  summary: Too few liveness images
+                  value:
+                    status: Bad Request
+                    message: liveness_images must contain at least 6 images.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+                invalidConsent:
+                  summary: Consent not granted
+                  value:
+                    status: Bad Request
+                    message: "Required field 'consent.granted' is missing or invalid."
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Payment Required
+                message: Insufficient wallet balance.
+        '403':
+          description: Forbidden — partner not authorized for this product or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                productAccess:
+                  summary: Product not enabled
+                  value:
+                    status: Forbidden
+                    message: Product not enabled for this partner.
+                productionAccess:
+                  summary: Production access denied
+                  value:
+                    status: Forbidden
+                    message: Production access is not enabled.
+                sdkVersion:
+                  summary: SDK version blocked
+                  value:
+                    status: Forbidden
+                    message: SDK version not allowed.
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '413':
+          description: Content Too Large — an uploaded file exceeds the size limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Content Too Large
+                message: selfie_image is too large.
+        '429':
+          description: Too Many Requests — rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Too Many Requests
+                message: Rate limit exceeded. Please try again later.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+
+components:
+  schemas:
+    BiometricEnrollmentRequest:
+      type: object
+      required:
+        - selfie_image
+        - liveness_images
+        - consent
+        - given_names
+        - last_name
+      properties:
+        selfie_image:
+          type: string
+          format: binary
+          description: >-
+            JPEG selfie image used as the enrollment reference photo.
+            Must be a clear, well-lit, front-facing photo.
+        liveness_images:
+          type: array
+          minItems: 6
+          maxItems: 8
+          items:
+            type: string
+            format: binary
+          description: >-
+            Array of 6–8 JPEG liveness sequence images captured during the liveness check.
+            These images are used for passive and active liveness verification.
+        consent:
+          $ref: '#/components/schemas/Consent'
+        given_names:
+          type: string
+          minLength: 1
+          description: >-
+            Given name(s) / first name of the individual being enrolled.
+          example: John
+        last_name:
+          type: string
+          minLength: 1
+          description: >-
+            Last name / surname of the individual being enrolled.
+          example: Doe
+        allow_new_enroll:
+          type: boolean
+          default: false
+          description: >-
+            If true, allows re-enrollment for a user who is already enrolled.
+            The existing enrollment will be replaced with the new selfie.
+            If false (default), enrollment fails if the user is already enrolled.
+        callback_url:
+          type: string
+          format: uri
+          description: >-
+            URL to receive the async result callback. Falls back to partner default if omitted.
+            Must be on the partner's allowed callback domains list.
+          example: https://example.com/callback
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: >-
+            Email address of the individual being enrolled.
+            At least one of email or phone_number is required.
+          example: john@example.com
+        phone_number:
+          type: string
+          pattern: '^\+'
+          nullable: true
+          description: >-
+            Phone number in E.164 format (must start with +).
+            At least one of email or phone_number is required.
+          example: '+2348012345678'
+        sandbox_result:
+          type: number
+          description: >-
+            Force a specific result code in sandbox/test environments.
+            Only effective when the partner account is in sandbox mode.
+          example: 0840
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value metadata for partner reference.
+          example:
+            order_id: 'ORD-12345'
+        metadata:
+          type: array
+          description: Additional metadata entries (e.g., SDK telemetry, device info).
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+
+    Consent:
+      type: object
+      required:
+        - granted
+        - granted_at
+        - notice_language
+        - notice_privacy_policy_url
+      properties:
+        granted:
+          type: boolean
+          enum: [true]
+          description: Must be true — user has granted consent.
+        granted_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when consent was granted.
+          example: '2026-03-06T12:00:00.000Z'
+        notice_language:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: '^[A-Z]{2}$'
+          description: ISO 639-1 language code of the privacy notice shown (uppercase).
+          example: EN
+        notice_privacy_policy_url:
+          type: string
+          format: uri
+          description: URL of the privacy policy notice shown to the user.
+          example: https://example.com/privacy
+
+    AcceptedResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [Accepted]
+        message:
+          type: string
+          example: Request accepted and queued for processing.
+        job_id:
+          type: string
+          description: TypeID format job identifier for tracking.
+          example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+        user_id:
+          type: string
+          description: TypeID format user identifier (or partner-provided User-ID).
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the job was created.
+          example: '2026-03-10T12:00:00.000Z'
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: HTTP status text.
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable error description.
+          example: "Required field 'selfie_image' is missing or invalid."

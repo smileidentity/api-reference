@@ -1,0 +1,34 @@
+name: Validate OpenAPI Specs
+
+on:
+  pull_request:
+    paths:
+      - "specs/**"
+      - ".spectral.yaml"
+  push:
+    branches: [main]
+    paths:
+      - "specs/**"
+      - ".spectral.yaml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint OpenAPI specs with Spectral
+        run: npx spectral lint specs/v3/*.yaml --fail-severity error
+
+      - name: Bundle OpenAPI specs
+        run: npx redocly bundle specs/v3/*.yaml -o bundled/openapi-v3.yaml
+
+      - name: Verify bundled spec is valid
+        run: npx spectral lint bundled/openapi-v3.yaml --fail-severity error
