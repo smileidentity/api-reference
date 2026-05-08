@@ -2,14 +2,8 @@ name: Validate OpenAPI Specs
 
 on:
   pull_request:
-    paths:
-      - "specs/**"
-      - ".spectral.yaml"
   push:
     branches: [main]
-    paths:
-      - "specs/**"
-      - ".spectral.yaml"
 
 jobs:
   validate:
