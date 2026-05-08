@@ -1,38 +1,113 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Smile Identity API Reference</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Smile Identity API Reference</title>
     <link
       href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700"
       rel="stylesheet"
     />
     <style>
-      body {
-        margin: 0;
-        padding: 0;
+      html, body { margin: 0; padding: 0; height: 100%; font-family: "Roboto", sans-serif; }
+      #app { display: flex; height: 100vh; }
+      #sidebar {
+        width: 260px;
+        flex: 0 0 260px;
+        background: #2B3990;
+        color: #fff;
+        overflow-y: auto;
+        padding: 24px 0;
       }
+      #sidebar h1 {
+        font-family: "Montserrat", sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 16px;
+        padding: 0 20px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+      #sidebar ul { list-style: none; margin: 0; padding: 0; }
+      #sidebar li a {
+        display: block;
+        padding: 8px 20px;
+        color: #fff;
+        text-decoration: none;
+        font-size: 14px;
+        border-left: 3px solid transparent;
+        transition: background 0.15s, border-color 0.15s;
+      }
+      #sidebar li a:hover { background: rgba(255,255,255,0.07); }
+      #sidebar li a.active {
+        background: rgba(255,255,255,0.1);
+        border-left-color: #fff;
+        font-weight: 700;
+      }
+      #content { flex: 1; overflow: auto; }
     </style>
   </head>
   <body>
-    <div id="redoc-container"></div>
-    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+    <div id="app">
+      <aside id="sidebar">
+        <h1>Smile ID API</h1>
+        <ul id="spec-list"></ul>
+      </aside>
+      <div id="content">
+        <div id="redoc-container"></div>
+      </div>
+    </div>
+
+    <script>
+      // <!-- SPEC_LIST_START -->
+      const SPECS = [
+        { file: "v3-biometric-authentication-entry", label: "Biometric Authentication" },
+        { file: "v3-biometric-enrollment-entry", label: "Biometric Enrollment" },
+        { file: "v3-biometric-kyc-entry", label: "Biometric KYC" },
+        { file: "v3-block-user", label: "Block User" },
+        { file: "v3-document-verification-entry", label: "Document Verification" },
+        { file: "v3-enhanced-document-verification-entry", label: "Enhanced Document Verification" },
+        { file: "v3-enhanced-kyc-entry", label: "Enhanced KYC" },
+        { file: "v3-enhanced-kyc-job-status", label: "Enhanced KYC Job Status" },
+        { file: "v3-id-status", label: "ID Status" },
+        { file: "v3-replay-callback", label: "Replay Callback" },
+        { file: "v3-services", label: "Services" },
+        { file: "v3-smart-selfie-compare-entry", label: "Smart Selfie Compare" },
+        { file: "v3-supported-documents", label: "Supported Documents" },
+        { file: "v3-token", label: "Token" }
+      ];
+      // <!-- SPEC_LIST_END -->
+
+      const params = new URLSearchParams(window.location.search);
+      const selected = SPECS.find(s => s.file === params.get("spec")) || SPECS[0];
+
+      const list = document.getElementById("spec-list");
+      for (const spec of SPECS) {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = `?spec=${encodeURIComponent(spec.file)}`;
+        a.textContent = spec.label;
+        if (spec.file === selected.file) a.className = "active";
+        li.appendChild(a);
+        list.appendChild(li);
+      }
+    </script>
+    <script src="https://cdn.redoc.ly/redoc/v2.4.0/bundles/redoc.standalone.js"></script>
     <script>
       Redoc.init(
-        "../bundled/openapi-v3.yaml",
+        `../specs/v3/${selected.file}.yaml`,
         {
           theme: {
-            colors: {
-              primary: { main: "#2B3990" },
-            },
+            colors: { primary: { main: "#2B3990" } },
             typography: {
               fontFamily: '"Roboto", sans-serif',
-              headings: { fontFamily: '"Montserrat", sans-serif' },
-            },
+              headings: { fontFamily: '"Montserrat", sans-serif' }
+            }
           },
           hideDownloadButton: false,
           expandResponses: "200,201,202",
+          nativeScrollbars: true
         },
         document.getElementById("redoc-container")
       );

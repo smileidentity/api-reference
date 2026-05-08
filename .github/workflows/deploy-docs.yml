@@ -1,0 +1,51 @@
+name: Deploy docs to Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "specs/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stage site
+        run: |
+          set -euo pipefail
+          mkdir -p _site/specs/v3
+          cp docs/index.html _site/index.html
+          cp specs/v3/*.yaml _site/specs/v3/
+
+      - name: Rewrite spec paths for flat layout
+        run: |
+          # docs/index.html points at ../specs/v3/<file>.yaml. After staging, the
+          # site root contains specs/v3/, so the relative path becomes specs/v3/.
+          sed -i 's|\.\./specs/v3/|specs/v3/|g' _site/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
