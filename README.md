@@ -4,13 +4,27 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 
 ## Endpoints
 
+<!-- SPEC_TABLE_START -->
 | Spec | Endpoint | Description |
 |------|----------|-------------|
-| [Token](specs/v3/v3-token.yaml) | `POST /v3/token` | Generate authentication token |
-| [Biometric Enrollment](specs/v3/v3-biometric-enrollment-entry.yaml) | `POST /v3/enroll` | Biometric selfie enrollment |
-| [Biometric KYC](specs/v3/v3-biometric-kyc-entry.yaml) | `POST /v3/biometric_kyc` | Biometric + KYC verification |
-| [Enhanced KYC](specs/v3/v3-enhanced-kyc-entry.yaml) | `POST /v3/enhanced_kyc` | ID authority verification |
-| [Replay Callback](specs/v3/v3-replay-callback.yaml) | `POST /v3/replay/{job_id}` | Replay a callback webhook |
+| [Biometric Authentication](specs/v3/v3-biometric-authentication-entry.yaml) | `POST /v3/authenticate` | Submit biometric authentication |
+| [Biometric Enrollment](specs/v3/v3-biometric-enrollment-entry.yaml) | `POST /v3/registration` | Submit biometric enrollment |
+| [Biometric KYC](specs/v3/v3-biometric-kyc-entry.yaml) | `POST /v3/biometric_kyc` | Submit Biometric KYC verification |
+| [Block User](specs/v3/v3-block-user.yaml) | `POST /v3/users/{user_id}` | Block or unblock an enrolled user |
+| [Document Verification](specs/v3/v3-document-verification-entry.yaml) | `POST /v3/document-verification` | Submit Document Verification |
+| [Enhanced Document Verification](specs/v3/v3-enhanced-document-verification-entry.yaml) | `POST /v3/enhanced-document-verification` | Submit Enhanced Document Verification |
+| [Enhanced KYC](specs/v3/v3-enhanced-kyc-entry.yaml) | `POST /v3/enhanced_kyc` | Submit Enhanced KYC verification |
+| [Enhanced KYC Job Status](specs/v3/v3-enhanced-kyc-job-status.yaml) | `GET /v3/status/{jobId}` | Get verification status |
+| [ID Status](specs/v3/v3-id-status.yaml) | `GET /v3/services/id_status` | Get ID type availability status |
+| [Replay Callback](specs/v3/v3-replay-callback.yaml) | `POST /v3/replay/{job_id}` | Replay a callback for a completed verification |
+| [Services](specs/v3/v3-services.yaml) | `GET /v3/services/bank_codes` | List bank codes |
+| [Services](specs/v3/v3-services.yaml) | `GET /v3/services/supported_id_types` | List supported KYC ID types |
+| [Smart Selfie Compare](specs/v3/v3-smart-selfie-compare-entry.yaml) | `POST /v3/smart_selfie_compare` | Submit smart selfie compare |
+| [Supported Documents](specs/v3/v3-supported-documents.yaml) | `GET /v3/services/supported_documents` | List supported documents for verification |
+| [Token](specs/v3/v3-token.yaml) | `POST /v3/token` | Generate v3 Auth Token |
+<!-- SPEC_TABLE_END -->
+
+> The table above is regenerated automatically on each spec sync. Don't hand-edit between the markers.
 
 ## Documentation
 
@@ -26,11 +40,11 @@ Rendered API documentation is available via [GitHub Pages](https://smileidentity
 
 ### Generate Client SDKs
 
-Use [OpenAPI Generator](https://openapi-generator.tech/) with the bundled spec:
+Use [OpenAPI Generator](https://openapi-generator.tech/) directly against any spec file:
 
 ```bash
 npx @openapitools/openapi-generator-cli generate \
-  -i bundled/openapi-v3.yaml \
+  -i specs/v3/v3-token.yaml \
   -g python \
   -o ./generated-client
 ```
@@ -38,15 +52,12 @@ npx @openapitools/openapi-generator-cli generate \
 ### Validate Specs
 
 ```bash
-npm install
-npm run validate
+npx --yes @stoplight/spectral-cli@^6.14.0 lint specs/v3/*.yaml
 ```
 
 ## Versioning
 
-Spec versions are synced with the [Smile Identity API releases](https://github.com/smileidentity/lambda). When a new version is tagged in the main API repository, specs are automatically copied here and a matching release is created.
-
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+Specs are versioned and released alongside the Smile Identity v3 API. Each release here corresponds to a deployed API version; see [CHANGELOG.md](CHANGELOG.md) for version history and [Releases](https://github.com/smileidentity/api-reference/releases) for tagged versions.
 
 ## Links
 
