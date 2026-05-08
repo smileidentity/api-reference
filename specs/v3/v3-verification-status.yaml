@@ -13,7 +13,7 @@ info:
 paths:
   /v3/status/{jobId}:
     get:
-      operationId: getEnhancedKycJobStatus
+      operationId: getVerificationStatus
       summary: Get verification status
       description: >-
         Retrieves the current status of a previously submitted verification.
