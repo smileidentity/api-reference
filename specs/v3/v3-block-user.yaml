@@ -1,0 +1,261 @@
+openapi: 3.0.3
+info:
+  title: V3 Block User API
+  version: 1.0.0
+  description: |
+    Block or unblock an enrolled user. Updates the user's fraud status,
+    active/deleted/allow_new_enroll state, and optionally marks associated verifications as
+    confirmed fraud.
+
+    The `user_id` is specified in the URL path. The partner is identified from the
+    JWT token provided via the `SmileID-Token` header (obtained from
+    `POST /v3/token`).
+
+    **Authentication**: Only JWT token auth is supported. Signature-based auth
+    (`smileid-request-signature` / `smileid-timestamp`) is not accepted.
+
+servers:
+  - url: https://api.smileidentity.com
+    description: Production
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://devapi.smileidentity.com
+    description: Development
+
+components:
+  securitySchemes:
+    SmileIDToken:
+      type: apiKey
+      in: header
+      name: SmileID-Token
+      description: JWT token obtained from `POST /v3/token`.
+
+  schemas:
+    BlockUserRequest:
+      type: object
+      description: |
+        At least one of `is_fraudulent`, `active`, `allow_new_enroll`, or `deleted`
+        must be provided. Additional properties are not allowed.
+      properties:
+        is_fraudulent:
+          type: boolean
+          description: |
+            Set to `true` to mark the user as fraudulent (block), or `false` to
+            remove the fraud flag (unblock).
+          example: true
+        update_jobs:
+          type: boolean
+          description: |
+            When `true` **and** `is_fraudulent` is also provided, updates the
+            confirmed-fraud status on all verifications associated with this user. If
+            unblocking (`is_fraudulent: false`), also re-allows any previously-blocked
+            biometric matches linked to those verifications.
+          example: true
+        active:
+          type: boolean
+          description: |
+            Set to `true` to mark the enrollee as active, or `false` to mark
+            inactive. Internally stored as `inactive = !active`.
+          example: true
+        allow_new_enroll:
+          type: boolean
+          description: |
+            Set to `true` to allow the user to re-enroll, or `false` to prevent
+            re-enrollment.
+          example: true
+        deleted:
+          type: boolean
+          description: Soft-delete (`true`) or restore (`false`) the enrollee record.
+          example: false
+      additionalProperties: false
+
+    BlockUserSuccessResponse:
+      type: object
+      required:
+        - message
+        - status
+      properties:
+        message:
+          type: string
+          description: Human-readable result message.
+          example: Enrollee user updated
+        status:
+          type: string
+          description: Operation status.
+          example: OK
+
+    ErrorResponse:
+      type: object
+      required:
+        - message
+        - status
+      properties:
+        message:
+          type: string
+          description: Human-readable error message.
+          example: Enrollee not found
+        status:
+          type: string
+          description: HTTP status text.
+          example: Not Found
+
+security:
+  - SmileIDToken: []
+
+paths:
+  /v3/users/{user_id}:
+    post:
+      operationId: blockUser
+      summary: Block or unblock an enrolled user
+      description: |
+        Updates an enrolled user's fraud status and/or enrollee state fields.
+        The partner is identified from the JWT token; `user_id` is taken from the
+        URL path.
+
+        **Blocking a user** (`is_fraudulent: true`):
+        - Creates a new fraud record for the enrollee.
+        - Optionally (`update_jobs: true`) creates confirmed-fraud entries for all
+          associated verifications.
+
+        **Unblocking a user** (`is_fraudulent: false`):
+        - Creates a new fraud record clearing the fraud flag.
+        - Optionally (`update_jobs: true`) soft-deletes confirmed-fraud entries and
+          re-allows previously-blocked biometric matches for associated verifications.
+
+        **Updating enrollee state** (`active`, `allow_new_enroll`, `deleted`):
+        - Updates the corresponding fields on the enrollee record.
+        - Only fields present in the request body are modified; omitted fields are
+          left unchanged.
+
+        A single indexing message is emitted after all database updates to ensure
+        the search index reflects the final state.
+      security:
+        - SmileIDToken: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: |
+            The partner-scoped user identifier of the enrolled user to update.
+            This is the `user_id` value originally provided during enrollment.
+          schema:
+            type: string
+          example: user-123
+      requestBody:
+        required: true
+        description: |
+          At least one actionable field (`is_fraudulent`, `active`,
+          `allow_new_enroll`, or `deleted`) must be provided. `update_jobs` alone
+          is not sufficient.
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BlockUserRequest'
+            examples:
+              block:
+                summary: Block a user and update verifications
+                value:
+                  is_fraudulent: true
+                  update_jobs: true
+              unblock:
+                summary: Unblock a user and restore verifications
+                value:
+                  is_fraudulent: false
+                  update_jobs: true
+              updateState:
+                summary: Update enrollee state only
+                value:
+                  active: true
+                  allow_new_enroll: true
+                  deleted: false
+              fullUpdate:
+                summary: Block user and update all fields
+                value:
+                  active: false
+                  allow_new_enroll: false
+                  deleted: false
+                  is_fraudulent: true
+                  update_jobs: true
+      responses:
+        '200':
+          description: Enrollee updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockUserSuccessResponse'
+              example:
+                message: Enrollee user updated
+                status: OK
+        '400':
+          description: |
+            Validation error. Possible causes:
+            - `user_id` path parameter is missing.
+            - Request body is empty or missing all actionable fields.
+            - Unknown fields in request body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: '"value" must contain at least one of [active, allow_new_enroll, deleted, is_fraudulent]'
+                status: Bad Request
+        '401':
+          description: Authentication failed (invalid or missing token).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Invalid token
+                status: Unauthorized
+        '402':
+          description: Insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: You are out of credits. Add funds to your wallet to run more verifications.
+                status: Payment Required
+        '403':
+          description: |
+            Access denied. Possible causes:
+            - Production mode not enabled for partner.
+            - IP address is blocked.
+            - IP not in partner's allowlist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: You are not authorized to do that.
+                status: Forbidden
+        '404':
+          description: No enrollee found for the given `user_id` and partner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Enrollee not found
+                status: Not Found
+        '415':
+          description: |
+            Wrong or missing `Content-Type` header. The request body must be sent
+            as `multipart/form-data`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+                status: Unsupported Media Type
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: System Error
+                status: Internal Server Error

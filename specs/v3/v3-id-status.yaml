@@ -1,0 +1,140 @@
+openapi: 3.0.3
+info:
+  title: Smile ID – ID Status API
+  description: |
+    Returns the current availability status of a given ID type for a country.
+
+    **Authentication**: Only JWT token auth is supported. Pass the token
+    obtained from `POST /v3/token` in the `SmileID-Token` header.
+    Signature-based auth (`smileid-request-signature` / `smileid-timestamp`)
+    is not accepted.
+  version: 3.0.0
+
+paths:
+  /v3/services/id_status:
+    get:
+      operationId: getIdStatus
+      summary: Get ID type availability status
+      description: |
+        Returns the current availability and success rate for a specific ID type
+        in a given country, based on uptime data from the last hour.
+
+        Requires authentication via JWT token.
+      tags:
+        - Services
+      security:
+        - SmileIDToken: []
+      parameters:
+        - name: country
+          in: query
+          required: true
+          description: ISO 3166-1 alpha-2 country code or full country name (e.g. "NG" or "Nigeria").
+          schema:
+            type: string
+            example: NG
+        - name: id_type
+          in: query
+          required: true
+          description: The ID type code to check status for (e.g. "BVN", "NIN", "VOTER_ID").
+          schema:
+            type: string
+            example: BVN
+      responses:
+        '200':
+          description: ID status retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - last_checked
+                  - last_check_status
+                  - last_hour_success_rate
+                  - last_known_status
+                  - last_check_success_rate
+                properties:
+                  last_checked:
+                    type: string
+                    format: date-time
+                    description: Timestamp of the most recent uptime check.
+                    example: '2026-04-14T12:30:00.000Z'
+                  last_check_status:
+                    type: string
+                    enum: [success, failure]
+                    description: Whether the most recent check succeeded or failed.
+                    example: success
+                  last_hour_success_rate:
+                    type: string
+                    description: Aggregate success rate over the last hour as a percentage.
+                    example: '95%'
+                  last_known_status:
+                    type: string
+                    description: The raw status string from the most recent check (e.g. "online", "offline").
+                    example: online
+                  last_check_success_rate:
+                    type: string
+                    description: Success rate of the most recent individual check as a percentage.
+                    example: '90%'
+              example:
+                last_checked: '2026-04-14T12:30:00.000Z'
+                last_check_status: success
+                last_hour_success_rate: '95%'
+                last_known_status: online
+                last_check_success_rate: '90%'
+        '400':
+          description: Bad request – missing or invalid parameters, or no uptime data found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingCountry:
+                  summary: Country parameter missing
+                  value:
+                    message: '"country" is required'
+                    status: Bad Request
+                invalidCountry:
+                  summary: Invalid country value
+                  value:
+                    message: Invalid country
+                    status: Bad Request
+                invalidIdType:
+                  summary: ID type not valid for country
+                  value:
+                    message: Invalid id_type for the given country
+                    status: Bad Request
+                noData:
+                  summary: No uptime data in the last hour
+                  value:
+                    message: 'No data found. Check that NG and BVN are valid inputs'
+                    status: Bad Request
+        '401':
+          description: Authentication failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: Invalid token
+                status: Unauthorized
+
+components:
+  securitySchemes:
+    SmileIDToken:
+      type: apiKey
+      in: header
+      name: SmileID-Token
+      description: JWT token obtained from `POST /v3/token`.
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - message
+        - status
+      properties:
+        message:
+          type: string
+          description: Human-readable error message.
+        status:
+          type: string
+          description: HTTP status text (e.g. "Bad Request", "Unauthorized").

@@ -1,0 +1,205 @@
+openapi: 3.0.3
+info:
+  title: V3 Services API
+  version: 1.0.0
+  description: |
+    Read-only reference endpoints that return static configuration data: supported bank
+    codes and KYC ID types. Both endpoints accept an optional `country` query parameter
+    to filter results by ISO 3166-1 alpha-2 country code.
+
+    These endpoints do not require authentication.
+
+servers:
+  - url: https://api.smileidentity.com
+    description: Production
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://devapi.smileidentity.com
+    description: Development
+
+components:
+  parameters:
+    CountryFilter:
+      name: country
+      in: query
+      required: false
+      description: |
+        ISO 3166-1 alpha-2 country code (two uppercase letters). When provided, only
+        items matching this country are returned. When omitted, all items are returned.
+      schema:
+        type: string
+        pattern: '^[A-Z]{2}$'
+        example: NG
+
+  schemas:
+    BankCode:
+      type: object
+      required:
+        - code
+        - country
+        - name
+      properties:
+        code:
+          type: string
+          description: Numeric bank code assigned by the country's central bank.
+          example: '044'
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2 country code.
+          example: NG
+        name:
+          type: string
+          description: Human-readable bank name.
+          example: Access Bank
+
+    BankCodesResponse:
+      type: object
+      properties:
+        bank_codes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankCode'
+
+    SupportedIdType:
+      type: object
+      required:
+        - country
+        - type
+        - label
+        - regex
+      properties:
+        bank_code:
+          type: string
+          description: |
+            Bank code required for this ID type. Only present for ID types that are
+            bank-specific (e.g. `BANK_ACCOUNT`).
+          example: '044'
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2 country code.
+          example: NG
+        label:
+          type: string
+          description: Human-readable label for the ID type.
+          example: Bank Verification Number
+        regex:
+          type: string
+          description: |
+            Regular expression pattern (without delimiters) that the ID number must
+            match for this ID type.
+          example: '^\d{11}$'
+        required_fields:
+          type: array
+          items:
+            type: string
+          description: |
+            List of field names that must be provided when submitting a verification
+            request for this ID type (e.g. `first_name`, `last_name`, `dob`).
+          example:
+            - first_name
+            - last_name
+            - dob
+        type:
+          type: string
+          description: Machine-readable ID type code.
+          example: BVN
+
+    SupportedIdTypesResponse:
+      type: object
+      properties:
+        id_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportedIdType'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.
+        code:
+          type: string
+          description: Smile Identity error code.
+
+paths:
+  /v3/services/bank_codes:
+    get:
+      operationId: getBankCodes
+      summary: List bank codes
+      description: |
+        Returns a list of bank codes supported for bank-account-based identity
+        verification. Optionally filtered by country.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CountryFilter'
+      responses:
+        '200':
+          description: Successful response containing bank codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankCodesResponse'
+              example:
+                bank_codes:
+                  - code: '044'
+                    country: NG
+                    name: Access Bank
+                  - code: '023'
+                    country: NG
+                    name: Citibank
+        '403':
+          description: Request blocked (IP blocked).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: You are not authorized to do that.
+                code: '2413'
+
+  /v3/services/supported_id_types:
+    get:
+      operationId: getSupportedIdTypes
+      summary: List supported KYC ID types
+      description: |
+        Returns a list of all KYC ID types supported for identity verification,
+        including their validation regex, required fields, and optional bank code.
+        Optionally filtered by country.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CountryFilter'
+      responses:
+        '200':
+          description: Successful response containing supported ID types.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedIdTypesResponse'
+              example:
+                id_types:
+                  - country: NG
+                    label: Bank Verification Number
+                    regex: '^\d{11}$'
+                    required_fields:
+                      - first_name
+                      - last_name
+                      - dob
+                    type: BVN
+                  - bank_code: '044'
+                    country: NG
+                    label: Bank Account (Access Bank)
+                    regex: '^\d{10}$'
+                    required_fields:
+                      - first_name
+                      - last_name
+                    type: BANK_ACCOUNT
+        '403':
+          description: Request blocked (IP blocked).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: You are not authorized to do that.
+                code: '2413'

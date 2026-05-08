@@ -1,0 +1,152 @@
+openapi: 3.0.0
+info:
+  title: V3 Verification Status API
+  version: '1.0.0'
+  description: >-
+    Retrieves the current status of a verification by its TypeID.
+
+    Authentication: token-based (SmileID-Token header with JWT from /v3/token).
+
+    The response includes the verification's current state,
+    mapped to one of: processing, complete, or not_found.
+
+paths:
+  /v3/status/{jobId}:
+    get:
+      operationId: getEnhancedKycJobStatus
+      summary: Get verification status
+      description: >-
+        Retrieves the current status of a previously submitted verification.
+        Returns the latest state from the verification lifecycle (processing, clear, block, attention, error).
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          description: TypeID format verification identifier with 'job_' prefix.
+          schema:
+            type: string
+            pattern: '^job_[0-9a-hjkmnp-tv-z]{26}$'
+            example: 'job_01h2xcejqtf2nbrexx3vqjhp41'
+        - name: SmileID-Token
+          in: header
+          required: true
+          description: JWT token from /v3/token.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Verification has reached a terminal state (clear, block, attention, or error).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+              example:
+                status: complete
+                job_id: job_01h2xcejqtf2nbrexx3vqjhp41
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                message: 'Verification completed with state: clear'
+        '202':
+          description: Verification is still processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+              example:
+                status: processing
+                job_id: job_01h2xcejqtf2nbrexx3vqjhp41
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                message: Verification is still processing
+        '400':
+          description: Bad Request — invalid jobId format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Bad Request
+                message: '"jobId" must be a valid TypeID with prefix ''job_'''
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '403':
+          description: Forbidden — IP not in allowlist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Forbidden
+                message: You are not authorized to do that.
+        '404':
+          description: Not Found — verification does not exist or does not belong to this partner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+              example:
+                status: not_found
+                job_id: job_01h2xcejqtf2nbrexx3vqjhp41
+                user_id: unknown
+                message: Verification not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+
+components:
+  schemas:
+    JobStatusResponse:
+      type: object
+      required:
+        - status
+        - job_id
+        - user_id
+        - message
+      properties:
+        status:
+          type: string
+          description: >-
+            Verification status. One of: complete (terminal state reached),
+            processing (still in progress), not_found.
+          enum:
+            - complete
+            - processing
+            - not_found
+          example: complete
+        job_id:
+          type: string
+          description: TypeID format verification identifier.
+          example: job_01h2xcejqtf2nbrexx3vqjhp41
+        user_id:
+          type: string
+          description: User ID associated with the verification.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+        message:
+          type: string
+          description: Human-readable status message.
+          example: 'Verification completed with state: clear'
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          description: HTTP status text.
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable error message.
+          example: '"jobId" must be a valid TypeID with prefix ''job_'''

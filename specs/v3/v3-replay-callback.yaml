@@ -3,25 +3,26 @@ info:
   title: V3 Replay Callback API
   version: '1.0.0'
   description: >-
-    Re-sends a callback webhook for a completed job so the partner receives it again.
+    Re-sends a callback webhook for a completed verification so the partner receives it again.
 
     This is a generic endpoint that works for any V3 product — the product is
-    inferred from the original job.
+    inferred from the original verification.
 
     Authentication: token-based (SmileID-Token header with JWT from /v3/token).
 
     Callback URL resolution order:
       1. `callback_url` from request body (validated against partner's allowed domains)
-      2. `callback_url` stored with the original job
+      2. `callback_url` stored with the original verification
       3. Partner's default callback URL
 
 paths:
   /v3/replay/{job_id}:
     post:
-      summary: Replay a callback for a completed job
+      operationId: replayCallback
+      summary: Replay a callback for a completed verification
       description: >-
-        Looks up a previously completed job by its TypeID, resolves the callback
-        URL, and re-sends the callback. The job must have reached a
+        Looks up a previously completed verification by its TypeID, resolves the callback
+        URL, and re-sends the callback. The verification must have reached a
         terminal state (clear, block, attention, or error) before its callback
         can be replayed.
 
@@ -31,19 +32,11 @@ paths:
         - name: job_id
           in: path
           required: true
-          description: TypeID format job identifier with 'job_' prefix.
+          description: TypeID format verification identifier with 'job_' prefix.
           schema:
             type: string
             pattern: '^job_[0-9a-z]{26}$'
             example: 'job_01h2xcejqtf2nbrexx3vqjhp41'
-        - name: SmileID-Partner-ID
-          in: header
-          required: true
-          description: Partner identifier (numeric, 3+ digits).
-          schema:
-            type: string
-            pattern: '^\d{3,}$'
-            example: '1234'
         - name: SmileID-Token
           in: header
           required: true
@@ -54,7 +47,7 @@ paths:
         required: false
         description: >-
           Optional body to override the callback URL. If omitted, the stored
-          callback URL (from the original job or partner default)
+          callback URL (from the original verification or partner default)
           is used.
         content:
           application/json:
@@ -97,7 +90,7 @@ paths:
                   summary: Product cannot be inferred
                   value:
                     status: Bad Request
-                    message: Unable to determine product for this job
+                    message: Unable to determine product for this verification
         '401':
           description: Unauthorized — invalid or missing authentication credentials.
           content:
@@ -120,7 +113,7 @@ paths:
                 message: You are not authorized to do that.
         '404':
           description: >-
-            Not Found — job does not exist, does not belong to this partner, or
+            Not Found — verification does not exist, does not belong to this partner, or
             has no reference entry.
           content:
             application/json:
@@ -128,18 +121,18 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
                 jobNotFound:
-                  summary: Job not found or belongs to another partner
+                  summary: Verification not found or belongs to another partner
                   value:
                     status: Not Found
-                    message: Job not found
+                    message: Verification not found
                 referenceNotFound:
-                  summary: Reference entry missing for the job
+                  summary: Reference entry missing for the verification
                   value:
                     status: Not Found
-                    message: Reference not found for this job
+                    message: Reference not found for this verification
         '409':
           description: >-
-            Conflict — job has not yet reached a terminal state. Wait for
+            Conflict — verification has not yet reached a terminal state. Wait for
             processing to complete before replaying the callback.
           content:
             application/json:
@@ -148,8 +141,8 @@ paths:
               example:
                 status: Conflict
                 message: >-
-                  Job is still processing. Callbacks can only be replayed for
-                  completed jobs.
+                  Verification is still processing. Callbacks can only be replayed for
+                  completed verifications.
         '500':
           description: Internal Server Error
           content:
@@ -188,11 +181,11 @@ components:
           example: accepted
         job_id:
           type: string
-          description: TypeID format job identifier.
+          description: TypeID format verification identifier.
           example: job_01h2xcejqtf2nbrexx3vqjhp41
         user_id:
           type: string
-          description: User ID associated with the job (from partner_params).
+          description: User ID associated with the verification (from partner_params).
           example: test-user
         message:
           type: string
