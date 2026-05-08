@@ -5,6 +5,17 @@ All notable changes to the Smile Identity API specifications will be documented 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
+## [v3.553.0] - 2026-05-08
+
+### Changed
+- Updated `v3-services`
+- Updated `v3-verification-status`
+
+### Removed
+- `v3-enhanced-kyc-job-status`
+- `v3-id-status`
+- `v3-supported-documents`
+
 ## [v3.549.0] - 2026-05-08
 
 ### Changed

@@ -14,14 +14,14 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 | [Document Verification](specs/v3/v3-document-verification-entry.yaml) | `POST /v3/document-verification` | Submit Document Verification |
 | [Enhanced Document Verification](specs/v3/v3-enhanced-document-verification-entry.yaml) | `POST /v3/enhanced-document-verification` | Submit Enhanced Document Verification |
 | [Enhanced KYC](specs/v3/v3-enhanced-kyc-entry.yaml) | `POST /v3/enhanced_kyc` | Submit Enhanced KYC verification |
-| [Enhanced KYC Job Status](specs/v3/v3-enhanced-kyc-job-status.yaml) | `GET /v3/status/{jobId}` | Get verification status |
-| [ID Status](specs/v3/v3-id-status.yaml) | `GET /v3/services/id_status` | Get ID type availability status |
 | [Replay Callback](specs/v3/v3-replay-callback.yaml) | `POST /v3/replay/{job_id}` | Replay a callback for a completed verification |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/bank_codes` | List bank codes |
+| [Services](specs/v3/v3-services.yaml) | `GET /v3/services/id_status` | Get ID type availability status |
+| [Services](specs/v3/v3-services.yaml) | `GET /v3/services/supported_documents` | List supported documents for verification |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/supported_id_types` | List supported KYC ID types |
 | [Smart Selfie Compare](specs/v3/v3-smart-selfie-compare-entry.yaml) | `POST /v3/smart_selfie_compare` | Submit smart selfie compare |
-| [Supported Documents](specs/v3/v3-supported-documents.yaml) | `GET /v3/services/supported_documents` | List supported documents for verification |
 | [Token](specs/v3/v3-token.yaml) | `POST /v3/token` | Generate v3 Auth Token |
+| [Verification Status](specs/v3/v3-verification-status.yaml) | `GET /v3/status/{jobId}` | Get verification status |
 <!-- SPEC_TABLE_END -->
 
 > The table above is regenerated automatically on each spec sync. Don't hand-edit between the markers.
