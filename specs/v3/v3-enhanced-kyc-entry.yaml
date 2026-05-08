@@ -4,7 +4,7 @@ info:
   version: '1.0.0'
   description: >-
     Async Enhanced KYC endpoint for identity verification against ID authority databases.
-    Accepts a request, validates at entry, and processes the job asynchronously.
+    Accepts a request, validates at entry, and processes the verification asynchronously.
     Returns HTTP 202 with a job_id and user_id to track the result via callback.
 
     Authentication: token-based (token header from /v3/token).
@@ -13,19 +13,12 @@ info:
 paths:
   /v3/enhanced_kyc:
     post:
+      operationId: submitEnhancedKyc
       summary: Submit Enhanced KYC verification
       description: >-
-        Allows submission of Enhanced KYC verification requests and processes the job asynchronously against the relevant ID authority.
+        Allows submission of Enhanced KYC verification requests and processes the verification asynchronously against the relevant ID authority.
         Results are delivered via callback URL.
       parameters:
-        - name: SmileID-Partner-ID
-          in: header
-          required: true
-          description: Partner identifier (numeric, 3+ digits).
-          schema:
-            type: string
-            pattern: '^\d{3,}$'
-            example: '1234'
         - name: SmileID-Token
           in: header
           required: true
@@ -82,7 +75,7 @@ paths:
               $ref: '#/components/schemas/EnhancedKycRequest'
       responses:
         '202':
-          description: Accepted — job submitted for async processing.
+          description: Accepted — verification submitted for async processing.
           content:
             application/json:
               schema:
@@ -109,6 +102,16 @@ paths:
                   value:
                     status: Bad Request
                     message: Either email or phone_number is required.
+                invalidEmail:
+                  summary: Invalid email format
+                  value:
+                    status: Bad Request
+                    message: "Field 'email' is invalid."
+                invalidPhone:
+                  summary: Invalid phone number format
+                  value:
+                    status: Bad Request
+                    message: "Field 'phone_number' is invalid."
                 invalidIdFormat:
                   summary: Invalid ID number format
                   value:
@@ -204,8 +207,7 @@ components:
         - country
         - id_type
         - id_number
-        - given_names
-        - last_name
+        - user_details
         - consent
       properties:
         country:
@@ -222,16 +224,37 @@ components:
           type: string
           description: ID document number. Must match the regex format for the country/id_type.
           example: '12345678901'
-        given_names:
-          type: string
-          minLength: 1
-          description: Given names of the individual.
-          example: John
-        last_name:
-          type: string
-          minLength: 1
-          description: Last name / surname of the individual.
-          example: Doe
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          description: >-
+            Consumer-stated PII fields for the user.
+            Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              description: Given names of the individual.
+              example: John
+            last_name:
+              type: string
+              minLength: 1
+              description: Last name / surname of the individual.
+              example: Doe
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: Email address. At least one of email or phone_number is required.
+              example: john@example.com
+            phone_number:
+              type: string
+              pattern: '^\+'
+              nullable: true
+              description: Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
+              example: '+2348012345678'
         consent:
           $ref: '#/components/schemas/Consent'
         callback_url:
@@ -241,18 +264,6 @@ components:
             URL to receive the async result callback. Falls back to partner default if omitted.
             Must be on the partner's allowed callback domains list.
           example: https://example.com/callback
-        email:
-          type: string
-          format: email
-          nullable: true
-          description: Email address. At least one of email or phone_number is required.
-          example: john@example.com
-        phone_number:
-          type: string
-          pattern: '^\+'
-          nullable: true
-          description: Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
-          example: '+2348012345678'
         bank_code:
           type: string
           description: Bank code (required for certain ID types like BANK_ACCOUNT).
@@ -323,7 +334,7 @@ components:
           example: Request accepted and queued for processing.
         job_id:
           type: string
-          description: TypeID format job identifier for tracking.
+          description: TypeID format verification identifier for tracking.
           example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
         user_id:
           type: string
@@ -332,7 +343,7 @@ components:
         created_at:
           type: string
           format: date-time
-          description: ISO 8601 timestamp of when the job was created.
+          description: ISO 8601 timestamp of when the verification was created.
           example: '2026-03-10T12:00:00.000Z'
 
     ErrorResponse:

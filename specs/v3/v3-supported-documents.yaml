@@ -1,0 +1,187 @@
+openapi: 3.0.3
+info:
+  title: V3 Supported Documents API
+  version: 1.0.0
+  description: |
+    Retrieves a list of supported document types for identity verification, filterable by
+    continent, country code, or locale.
+
+    This endpoint does not require authentication.
+
+    This endpoint is an alias of `GET /v1/valid_documents` and `GET /v3/valid-documents`,
+    providing the same data under a more descriptive path.
+
+servers:
+  - url: https://api.smileidentity.com
+    description: Production
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://devapi.smileidentity.com
+    description: Development
+
+components:
+  schemas:
+    Country:
+      type: object
+      properties:
+        code:
+          type: string
+          description: ISO 3166-1 alpha-2 country code.
+          example: NG
+        name:
+          type: string
+          description: Country name.
+          example: Nigeria
+        continent:
+          type: string
+          description: Continent name.
+          example: AFRICA
+
+    IDType:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable ID type code.
+          example: DRIVERS_LICENSE
+        name:
+          type: string
+          description: Human-readable name of the ID type.
+          example: Driver's License
+        example:
+          type: array
+          items:
+            type: string
+          description: Example ID numbers or usage hints.
+        has_back:
+          type: boolean
+          description: Whether this document type has a back side that should be captured.
+          example: true
+
+    SupportedDocument:
+      type: object
+      properties:
+        country:
+          $ref: '#/components/schemas/Country'
+        id_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/IDType'
+
+    SupportedDocumentsResponse:
+      type: object
+      properties:
+        valid_documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportedDocument'
+      required:
+        - valid_documents
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.
+        code:
+          type: string
+          description: Smile Identity error code.
+      required:
+        - error
+        - code
+
+paths:
+  /v3/services/supported_documents:
+    get:
+      summary: List supported documents for verification
+      operationId: getSupportedDocuments
+      description: |
+        Returns a list of supported document types for identity verification across all
+        countries served by Smile Identity.
+
+        The response can be filtered by continent or country code. An optional `locale`
+        parameter controls the language of document names.
+      tags:
+        - Services
+      security: []
+      parameters:
+        - name: continent
+          in: query
+          required: false
+          description: Filter results to a single continent.
+          schema:
+            type: string
+            enum:
+              - AFRICA
+              - ASIA
+              - EUROPE
+              - 'NORTH AMERICA'
+              - OCEANIA
+              - 'SOUTH AMERICA'
+          example: AFRICA
+        - name: country_code
+          in: query
+          required: false
+          description: |
+            Filter results to a single country. Must be an ISO 3166-1 alpha-2 code
+            (two uppercase letters).
+          schema:
+            type: string
+            pattern: '^[A-Z]{2}$'
+          example: NG
+        - name: locale
+          in: query
+          required: false
+          description: |
+            Locale for document names. Defaults to `en-GB`.
+            Supported values: `en-GB`, `fr-FR`, `ar-EG`.
+          schema:
+            type: string
+            default: en-GB
+            enum:
+              - en-GB
+              - fr-FR
+              - ar-EG
+      responses:
+        '200':
+          description: List of supported documents, optionally filtered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedDocumentsResponse'
+              example:
+                valid_documents:
+                  - country:
+                      code: NG
+                      name: Nigeria
+                      continent: AFRICA
+                    id_types:
+                      - code: DRIVERS_LICENSE
+                        name: Driver's License
+                        example: ['AAA00000AA00']
+                        has_back: true
+                      - code: NATIONAL_ID
+                        name: National ID (NIN Slip)
+                        example: ['00000000000']
+                        has_back: false
+        '400':
+          description: Invalid query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: >-
+                  Country Code must be a valid ISO 3166-1 alpha-2 country code
+                  consisting of exactly two uppercase letters.
+                code: '2413'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: System Error
+                code: '2401'

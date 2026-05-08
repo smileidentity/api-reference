@@ -1,27 +1,28 @@
 openapi: 3.0.0
 info:
-  title: V3 Biometric KYC Entry API
+  title: V3 Enhanced Document Verification API
   version: '1.0.0'
   description: >-
-    Async Biometric KYC endpoint combining biometric verification with KYC identity checks.
-    Accepts a selfie image, liveness images, and ID details, validates at entry, and processes
-    the verification asynchronously (passive liveness, active liveness, and ID authority verification).
+    Async Enhanced Document Verification endpoint.
+    Combines document verification with identity data cross-referencing.
+    Accepts a selfie image, liveness images, and a document image (front, and optionally back),
+    along with a required id_type.
     Returns HTTP 202 with a job_id and user_id to track the result via callback.
 
     Authentication: token-based (token header from /v3/token).
 
     At least one of `email` or `phone_number` is required.
 paths:
-  /v3/biometric_kyc:
+  /v3/enhanced-document-verification:
     post:
-      summary: Submit Biometric KYC verification
-      operationId: v3BiometricKycEntry
+      summary: Submit Enhanced Document Verification
+      operationId: v3EnhancedDocumentVerificationEntry
       description: >-
-        Combines biometric selfie verification with KYC identity checks against the
-        relevant ID authority. The selfie and liveness images are uploaded alongside
-        identity details (country, id_type, id_number), validated at entry, then processed
-        asynchronously.
-        Results are delivered via callback URL.
+        Verifies a user's identity by comparing a selfie against a document image and
+        cross-referencing extracted data for additional verification.
+        The selfie and liveness images are uploaded alongside a document photo (front, and
+        optionally back). The id_type is required for this endpoint.
+        Results are delivered asynchronously via callback URL.
       parameters:
         - name: SmileID-Partner-ID
           in: header
@@ -84,15 +85,19 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BiometricKycRequest'
+              $ref: '#/components/schemas/EnhancedDocumentVerificationRequest'
             encoding:
               selfie_image:
                 contentType: image/jpeg
               liveness_images:
                 contentType: image/jpeg
+              document:
+                contentType: image/jpeg, image/png
+              document_back:
+                contentType: image/jpeg, image/png
       responses:
         '202':
-          description: Accepted — verification submitted for async processing.
+          description: Accepted — job submitted for processing.
           content:
             application/json:
               schema:
@@ -110,6 +115,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
+                missingDocument:
+                  summary: Missing document image
+                  value:
+                    status: Bad Request
+                    message: "Required field 'document' is missing or invalid."
+                missingIdType:
+                  summary: Missing id_type (required for Enhanced DocV)
+                  value:
+                    status: Bad Request
+                    message: "Required field 'id_type' is missing or invalid."
                 missingSelfie:
                   summary: Missing selfie image
                   value:
@@ -135,11 +150,11 @@ paths:
                   value:
                     status: Bad Request
                     message: "Required field 'consent.granted' is missing or invalid."
-                invalidIdFormat:
-                  summary: Invalid ID number format
+                invalidDocumentMime:
+                  summary: Invalid document image format
                   value:
                     status: Bad Request
-                    message: Invalid ID number format for the specified country and ID type.
+                    message: Document image must be JPEG or PNG.
         '401':
           description: Unauthorized — invalid or missing authentication credentials.
           content:
@@ -204,7 +219,7 @@ paths:
                 status: Unsupported Media Type
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
         '429':
-          description: Too Many Requests — rate limit exceeded for this ID number.
+          description: Too Many Requests — rate limit exceeded.
           content:
             application/json:
               schema:
@@ -224,15 +239,15 @@ paths:
 
 components:
   schemas:
-    BiometricKycRequest:
+    EnhancedDocumentVerificationRequest:
       type: object
       required:
         - selfie_image
         - liveness_images
         - consent
         - country
+        - document
         - id_type
-        - id_number
         - user_details
       properties:
         selfie_image:
@@ -250,7 +265,20 @@ components:
             format: binary
           description: >-
             Array of 6–8 JPEG liveness sequence images captured during the liveness check.
-            These images are used for passive and active liveness verification.
+            These images are used for liveness verification.
+        document:
+          type: string
+          format: binary
+          description: >-
+            Front of the identity document (JPEG or PNG).
+            Used for document verification and data extraction.
+        document_back:
+          type: string
+          format: binary
+          description: >-
+            Back of the identity document (JPEG or PNG). Optional.
+            Provide when the document has relevant information on the back (e.g., barcodes,
+            MRZ on some document types).
         consent:
           $ref: '#/components/schemas/Consent'
         country:
@@ -261,12 +289,10 @@ components:
           example: NG
         id_type:
           type: string
-          description: ID document type (e.g., NIN, BVN, DRIVERS_LICENSE).
-          example: NIN
-        id_number:
-          type: string
-          description: ID document number. Must match the regex format for the country/id_type.
-          example: '12345678901'
+          description: >-
+            ID document type (e.g., DRIVERS_LICENSE, NATIONAL_ID).
+            Required for Enhanced Document Verification.
+          example: DRIVERS_LICENSE
         user_details:
           type: object
           required:
@@ -309,12 +335,6 @@ components:
             URL to receive the async result callback. Falls back to partner default if omitted.
             Must be on the partner's allowed callback domains list.
           example: https://example.com/callback
-        sandbox_result:
-          type: number
-          description: >-
-            Force a specific result code in sandbox/test environments.
-            Only effective when the partner account is in sandbox mode.
-          example: 1220
         partner_params:
           type: object
           additionalProperties:
@@ -379,7 +399,7 @@ components:
           example: Request accepted and queued for processing.
         job_id:
           type: string
-          description: TypeID format verification identifier for tracking.
+          description: TypeID format job identifier for tracking.
           example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
         user_id:
           type: string
@@ -388,7 +408,7 @@ components:
         created_at:
           type: string
           format: date-time
-          description: ISO 8601 timestamp of when the verification was created.
+          description: ISO 8601 timestamp of when the job was created.
           example: '2026-03-10T12:00:00.000Z'
 
     ErrorResponse:

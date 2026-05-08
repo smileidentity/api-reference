@@ -5,6 +5,24 @@ All notable changes to the Smile Identity API specifications will be documented 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
+## [v3.549.0] - 2026-05-08
+
+### Changed
+- Updated `v3-biometric-authentication-entry`
+- Updated `v3-biometric-enrollment-entry`
+- Updated `v3-biometric-kyc-entry`
+- Updated `v3-block-user`
+- Updated `v3-document-verification-entry`
+- Updated `v3-enhanced-document-verification-entry`
+- Updated `v3-enhanced-kyc-entry`
+- Updated `v3-enhanced-kyc-job-status`
+- Updated `v3-id-status`
+- Updated `v3-replay-callback`
+- Updated `v3-services`
+- Updated `v3-smart-selfie-compare-entry`
+- Updated `v3-supported-documents`
+- Updated `v3-token`
+
 
 ### Added
 

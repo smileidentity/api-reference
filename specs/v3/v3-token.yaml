@@ -8,17 +8,17 @@ info:
 paths:
   /v3/token:
     post:
+      operationId: getV3Token
       summary: Generate v3 Auth Token
       description: Issues a short-lived JWT for authenticating subsequent v3 API requests.
       parameters:
         - name: smileid-partner-id
           in: header
           required: true
-          description: >-
-            Your unique partner identifier. Must be a numeric string with at least 3 digits.
+          description: Your unique partner identifier. Must be numeric with no leading zeros.
           schema:
             type: string
-            pattern: '^\d{3,}$'
+            pattern: '^[1-9]\d*$'
             example: '1234'
         - name: smileid-api-key
           in: header
@@ -42,6 +42,9 @@ paths:
             schema:
               type: object
               properties:
+                user_id:
+                  type: string
+                  description: Optional partner-provided user identifier.
                 partner_params:
                   type: object
                   additionalProperties:
