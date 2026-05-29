@@ -7,7 +7,7 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 <!-- SPEC_TABLE_START -->
 | Spec | Endpoint | Description |
 |------|----------|-------------|
-| [Biometric Authentication](specs/v3/v3-biometric-authentication-entry.yaml) | `POST /v3/authenticate` | Submit biometric authentication |
+| [Biometric Authentication](specs/v3/v3-biometric-authentication-entry.yaml) | `POST /v3/authentication` | Submit biometric authentication |
 | [Biometric Enrollment](specs/v3/v3-biometric-enrollment-entry.yaml) | `POST /v3/registration` | Submit biometric enrollment |
 | [Biometric KYC](specs/v3/v3-biometric-kyc-entry.yaml) | `POST /v3/biometric_kyc` | Submit Biometric KYC verification |
 | [Block User](specs/v3/v3-block-user.yaml) | `POST /v3/users/{user_id}` | Block or unblock an enrolled user |

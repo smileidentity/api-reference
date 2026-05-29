@@ -13,7 +13,7 @@ info:
     At least one of `email` or `phone_number` is required. The `user_id` field is required
     and must match an existing enrolled user.
 paths:
-  /v3/authenticate:
+  /v3/authentication:
     post:
       summary: Submit biometric authentication
       operationId: v3BiometricAuthentication
