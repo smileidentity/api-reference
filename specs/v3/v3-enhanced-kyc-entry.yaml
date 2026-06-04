@@ -97,6 +97,11 @@ paths:
                   value:
                     status: Bad Request
                     message: "Required field 'country' is missing or invalid."
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: A valid callback_url is required in the request or a default callback URL must be configured in the portal.
                 missingContact:
                   summary: Missing email and phone
                   value:

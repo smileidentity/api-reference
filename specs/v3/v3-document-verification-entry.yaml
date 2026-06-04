@@ -130,6 +130,11 @@ paths:
                   value:
                     status: Bad Request
                     message: liveness_images must contain at least 6 images.
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: A valid callback_url is required in the request or a default callback URL must be configured in the portal.
                 missingCountry:
                   summary: Missing required field
                   value:
