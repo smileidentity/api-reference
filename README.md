@@ -10,11 +10,11 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 | [Biometric Authentication](specs/v3/v3-biometric-authentication-entry.yaml) | `POST /v3/authentication` | Submit biometric authentication |
 | [Biometric Enrollment](specs/v3/v3-biometric-enrollment-entry.yaml) | `POST /v3/registration` | Submit biometric enrollment |
 | [Biometric KYC](specs/v3/v3-biometric-kyc-entry.yaml) | `POST /v3/biometric_kyc` | Submit Biometric KYC verification |
-| [Block User](specs/v3/v3-block-user.yaml) | `POST /v3/users/{user_id}` | Block or unblock an enrolled user |
 | [Document Verification](specs/v3/v3-document-verification-entry.yaml) | `POST /v3/document-verification` | Submit Document Verification |
 | [Enhanced Document Verification](specs/v3/v3-enhanced-document-verification-entry.yaml) | `POST /v3/enhanced-document-verification` | Submit Enhanced Document Verification |
 | [Enhanced KYC](specs/v3/v3-enhanced-kyc-entry.yaml) | `POST /v3/enhanced_kyc` | Submit Enhanced KYC verification |
 | [Replay Callback](specs/v3/v3-replay-callback.yaml) | `POST /v3/replay/{job_id}` | Replay a callback for a completed verification |
+| [Report User Fraud](specs/v3/v3-report-user-fraud.yaml) | `POST /v3/users/{user_id}/report_fraud` | Flag or clear fraud status for a user |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/bank_codes` | List bank codes |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/id_status` | Get ID type availability status |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/supported_documents` | List supported documents for verification |
