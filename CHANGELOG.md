@@ -5,6 +5,7 @@ All notable changes to the Smile Identity API specifications will be documented 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
+
 ## [v3.635.0] - 2026-06-04
 
 ### Changed
@@ -16,6 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Updated `v3-enhanced-kyc-entry`
 - Updated `v3-report-user-fraud`
 - Updated `v3-smart-selfie-compare-entry`
+
+## [v3.634.0] - 2026-06-04
+
+### Changed
+- Updated `v3-report-user-fraud`
 
 ### Removed
 - `v3-block-user`
