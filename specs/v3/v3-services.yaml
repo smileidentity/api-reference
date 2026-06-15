@@ -9,14 +9,6 @@ info:
     Most endpoints do not require authentication. The `GET /v3/services/id_status` endpoint
     requires a JWT token passed in the `SmileID-Token` header.
 
-servers:
-  - url: https://api.smileidentity.com
-    description: Production
-  - url: https://testapi.smileidentity.com
-    description: Sandbox
-  - url: https://devapi.smileidentity.com
-    description: Development
-
 components:
   parameters:
     CountryFilter:
