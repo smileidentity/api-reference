@@ -125,11 +125,6 @@ paths:
                   value:
                     status: Bad Request
                     message: "Required field 'selfie_image' is missing or invalid."
-                insufficientLiveness:
-                  summary: Too few liveness images
-                  value:
-                    status: Bad Request
-                    message: liveness_images must contain at least 6 images.
                 missingCallbackUrl:
                   summary: Missing callback_url and no default set
                   value:
@@ -258,7 +253,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of 6–8 JPEG liveness sequence images captured during the liveness check.
+            Array of JPEG liveness sequence images captured during the liveness check.
             These images are used for liveness verification.
         document:
           type: string

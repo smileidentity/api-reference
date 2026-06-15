@@ -178,7 +178,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of 6–8 JPEG liveness images. Required unless use_enrolled_image is true.
+            Array of JPEG liveness images. Required unless use_enrolled_image is true.
         consent:
           $ref: '#/components/schemas/Consent'
         user_details:

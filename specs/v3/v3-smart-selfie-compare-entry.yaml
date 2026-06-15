@@ -225,7 +225,7 @@ components:
             type: string
             format: binary
           description: >-
-            Optional array of 6–8 JPEG liveness images. If omitted, active liveness check
+            Optional array of JPEG liveness images. If omitted, active liveness check
             is skipped.
         allow_new_enroll:
           type: boolean
