@@ -12,7 +12,7 @@ info:
 
     At least one of `email` or `phone_number` is required.
 paths:
-  /v3/smart_selfie_compare:
+  /v3/compare:
     post:
       summary: Submit smart selfie compare
       operationId: v3SmartSelfieCompare

@@ -13,7 +13,7 @@ info:
 
     At least one of `email` or `phone_number` is required.
 paths:
-  /v3/enhanced-document-verification:
+  /v3/enhanced_document_verification:
     post:
       summary: Submit Enhanced Document Verification
       operationId: v3EnhancedDocumentVerificationEntry

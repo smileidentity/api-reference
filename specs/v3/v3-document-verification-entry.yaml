@@ -13,7 +13,7 @@ info:
 
     At least one of `email` or `phone_number` is required.
 paths:
-  /v3/document-verification:
+  /v3/document_verification:
     post:
       summary: Submit Document Verification
       operationId: v3DocumentVerificationEntry

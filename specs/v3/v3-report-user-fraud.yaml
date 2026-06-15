@@ -16,14 +16,6 @@ info:
     partner's IP allowlist (when configured) and must not appear on the IP
     blocklist.
 
-servers:
-  - url: https://api.smileidentity.com
-    description: Production
-  - url: https://testapi.smileidentity.com
-    description: Sandbox
-  - url: https://devapi.smileidentity.com
-    description: Development
-
 components:
   securitySchemes:
     SmileIDToken:

@@ -10,8 +10,8 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 | [Biometric Authentication](specs/v3/v3-biometric-authentication-entry.yaml) | `POST /v3/authentication` | Submit biometric authentication |
 | [Biometric Enrollment](specs/v3/v3-biometric-enrollment-entry.yaml) | `POST /v3/registration` | Submit biometric enrollment |
 | [Biometric KYC](specs/v3/v3-biometric-kyc-entry.yaml) | `POST /v3/biometric_kyc` | Submit Biometric KYC verification |
-| [Document Verification](specs/v3/v3-document-verification-entry.yaml) | `POST /v3/document-verification` | Submit Document Verification |
-| [Enhanced Document Verification](specs/v3/v3-enhanced-document-verification-entry.yaml) | `POST /v3/enhanced-document-verification` | Submit Enhanced Document Verification |
+| [Document Verification](specs/v3/v3-document-verification-entry.yaml) | `POST /v3/document_verification` | Submit Document Verification |
+| [Enhanced Document Verification](specs/v3/v3-enhanced-document-verification-entry.yaml) | `POST /v3/enhanced_document_verification` | Submit Enhanced Document Verification |
 | [Enhanced KYC](specs/v3/v3-enhanced-kyc-entry.yaml) | `POST /v3/enhanced_kyc` | Submit Enhanced KYC verification |
 | [Replay Callback](specs/v3/v3-replay-callback.yaml) | `POST /v3/replay/{job_id}` | Replay a callback for a completed verification |
 | [Report User Fraud](specs/v3/v3-report-user-fraud.yaml) | `POST /v3/users/{user_id}/report_fraud` | Flag or clear fraud status for a user |
@@ -19,7 +19,7 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/id_status` | Get ID type availability status |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/supported_documents` | List supported documents for verification |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/supported_id_types` | List supported KYC ID types |
-| [Smart Selfie Compare](specs/v3/v3-smart-selfie-compare-entry.yaml) | `POST /v3/smart_selfie_compare` | Submit smart selfie compare |
+| [Smart Selfie Compare](specs/v3/v3-smart-selfie-compare-entry.yaml) | `POST /v3/compare` | Submit smart selfie compare |
 | [Token](specs/v3/v3-token.yaml) | `POST /v3/token` | Generate v3 Auth Token |
 | [Verification Status](specs/v3/v3-verification-status.yaml) | `GET /v3/status/{jobId}` | Get verification status |
 <!-- SPEC_TABLE_END -->
