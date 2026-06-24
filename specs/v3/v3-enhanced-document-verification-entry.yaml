@@ -322,7 +322,7 @@ components:
               example: john@example.com
             phone_number:
               type: string
-              pattern: '^\+'
+              pattern: '^\+[1-9]\d{6,14}$'
               nullable: true
               description: >-
                 Phone number in E.164 format (must start with +).
