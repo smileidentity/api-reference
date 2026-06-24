@@ -27,13 +27,6 @@ paths:
           schema:
             type: string
             example: abcd1234key
-        - name: smileid-user-id
-          in: header
-          required: false
-          description: >-
-            Optional user identifier. If provided, it is included in the JWT payload as `user_id`.
-          schema:
-            type: string
       requestBody:
         description: Optional parameters to be included in the generated token.
         required: false
