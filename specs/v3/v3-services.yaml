@@ -227,6 +227,8 @@ paths:
   /v3/services/bank_codes:
     get:
       operationId: getBankCodes
+      tags:
+        - Services
       summary: List bank codes
       description: |
         Returns a list of bank codes supported for bank-account-based identity
@@ -262,6 +264,8 @@ paths:
   /v3/services/supported_id_types:
     get:
       operationId: getSupportedIdTypes
+      tags:
+        - Services
       summary: List supported KYC ID types
       description: |
         Returns a list of all KYC ID types supported for identity verification,
@@ -308,6 +312,8 @@ paths:
   /v3/services/supported_documents:
     get:
       operationId: getSupportedDocuments
+      tags:
+        - Services
       summary: List supported documents for verification
       description: |
         Returns a list of supported document types for identity verification across all
@@ -403,6 +409,8 @@ paths:
   /v3/services/id_status:
     get:
       operationId: getIdStatus
+      tags:
+        - Services
       summary: Get ID type availability status
       description: |
         Returns the current availability and success rate for a specific ID type

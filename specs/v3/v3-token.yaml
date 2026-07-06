@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: v3 Authentication Token API
   version: '1.0.0'
@@ -9,6 +9,8 @@ paths:
   /v3/token:
     post:
       operationId: getV3Token
+      tags:
+        - Authentication
       summary: Generate v3 Auth Token
       description: Issues a short-lived JWT for authenticating subsequent v3 API requests.
       parameters:

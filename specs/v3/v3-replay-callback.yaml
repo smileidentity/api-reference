@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: V3 Replay Callback API
   version: '1.0.0'
@@ -19,6 +19,8 @@ paths:
   /v3/replay/{job_id}:
     post:
       operationId: replayCallback
+      tags:
+        - Callback Replay
       summary: Replay a callback for a completed verification
       description: >-
         Looks up a previously completed verification by its TypeID, resolves the callback

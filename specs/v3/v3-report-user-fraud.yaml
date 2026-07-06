@@ -111,6 +111,8 @@ paths:
   /v3/users/{user_id}/report_fraud:
     post:
       operationId: reportUserFraud
+      tags:
+        - Users
       summary: Flag or clear fraud status for a user
       description: |
         Records a fraud report (or fraud-clearance) for a previously enrolled
