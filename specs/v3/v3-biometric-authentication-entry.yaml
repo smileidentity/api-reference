@@ -19,6 +19,8 @@ paths:
       operationId: v3BiometricAuthentication
       tags:
         - Biometric Authentication
+      security:
+        - SmileIDToken: []
       description: >-
         Authenticates a user by comparing a submitted selfie against their enrolled image.
         The selfie and liveness images are uploaded, validated at entry, then queued for
@@ -28,12 +30,6 @@ paths:
         Supports `use_enrolled_image: true` to skip selfie/liveness upload and re-use the
         enrolled image for the comparison (useful for server-side re-verification).
       parameters:
-        - name: SmileID-Token
-          in: header
-          required: true
-          description: JWT token from /v3/token.
-          schema:
-            type: string
         - name: SmileID-Source-SDK
           in: header
           required: false
@@ -156,6 +152,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 components:
+  securitySchemes:
+    SmileIDToken:
+      type: apiKey
+      in: header
+      name: SmileID-Token
+      description: JWT token obtained from `POST /v3/token`.
   schemas:
     BiometricAuthenticationRequest:
       type: object

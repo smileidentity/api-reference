@@ -19,6 +19,8 @@ paths:
       operationId: v3EnhancedDocumentVerificationEntry
       tags:
         - Enhanced Document Verification
+      security:
+        - SmileIDToken: []
       description: >-
         Verifies a user's identity by comparing a selfie against a document image and
         cross-referencing extracted data for additional verification.
@@ -34,12 +36,6 @@ paths:
             type: string
             pattern: '^\d{3,}$'
             example: '1234'
-        - name: SmileID-Token
-          in: header
-          required: true
-          description: JWT token from /v3/token.
-          schema:
-            type: string
         - name: SmileID-Source-SDK
           in: header
           required: false
@@ -242,6 +238,12 @@ paths:
                 message: An unexpected error occurred. Please try again or contact support.
 
 components:
+  securitySchemes:
+    SmileIDToken:
+      type: apiKey
+      in: header
+      name: SmileID-Token
+      description: JWT token obtained from `POST /v3/token`.
   schemas:
     EnhancedDocumentVerificationRequest:
       type: object

@@ -18,18 +18,14 @@ paths:
       operationId: v3BiometricEnrollment
       tags:
         - Biometric Enrollment
+      security:
+        - SmileIDToken: []
       description: >-
         Enrolls a user's biometric selfie for future authentication.
         The selfie and liveness images are uploaded, validated at entry, then processed
         asynchronously (passive liveness, active liveness).
         Results are delivered via callback URL.
       parameters:
-        - name: SmileID-Token
-          in: header
-          required: true
-          description: JWT token from /v3/token.
-          schema:
-            type: string
         - name: SmileID-Source-SDK
           in: header
           required: false
@@ -203,6 +199,12 @@ paths:
                 message: An unexpected error occurred. Please try again or contact support.
 
 components:
+  securitySchemes:
+    SmileIDToken:
+      type: apiKey
+      in: header
+      name: SmileID-Token
+      description: JWT token obtained from `POST /v3/token`.
   schemas:
     BiometricEnrollmentRequest:
       type: object
