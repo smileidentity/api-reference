@@ -18,6 +18,8 @@ paths:
       operationId: v3SmartSelfieCompare
       tags:
         - Smart Selfie Compare
+      security:
+        - SmileIDToken: []
       description: >-
         Compares a selfie image against a provided comparison image (document, ID photo, or portrait).
         The images are uploaded, validated at entry, then queued for async ML processing
@@ -26,12 +28,6 @@ paths:
 
         If `user_id` is provided and the comparison passes, the user will be enrolled.
       parameters:
-        - name: SmileID-Token
-          in: header
-          required: true
-          description: JWT token from /v3/token.
-          schema:
-            type: string
         - name: SmileID-Source-SDK
           in: header
           required: false
@@ -166,6 +162,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 components:
+  securitySchemes:
+    SmileIDToken:
+      type: apiKey
+      in: header
+      name: SmileID-Token
+      description: JWT token obtained from `POST /v3/token`.
   schemas:
     SmartSelfieCompareRequest:
       type: object

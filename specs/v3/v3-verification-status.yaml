@@ -16,6 +16,8 @@ paths:
       operationId: getVerificationStatus
       tags:
         - Verification Status
+      security:
+        - SmileIDToken: []
       summary: Get verification status
       description: >-
         Retrieves the current status of a previously submitted verification.
@@ -29,12 +31,6 @@ paths:
             type: string
             pattern: '^job_[0-9a-hjkmnp-tv-z]{26}$'
             example: 'job_01h2xcejqtf2nbrexx3vqjhp41'
-        - name: SmileID-Token
-          in: header
-          required: true
-          description: JWT token from /v3/token.
-          schema:
-            type: string
       responses:
         '200':
           description: Verification has reached a terminal state (clear, block, attention, or error).
@@ -107,6 +103,12 @@ paths:
                 message: An unexpected error occurred. Please try again or contact support.
 
 components:
+  securitySchemes:
+    SmileIDToken:
+      type: apiKey
+      in: header
+      name: SmileID-Token
+      description: JWT token obtained from `POST /v3/token`.
   schemas:
     JobStatusResponse:
       type: object
