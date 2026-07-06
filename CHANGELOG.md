@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [v3.729.0] - 2026-07-06
+
+### Changed
+- Updated `v3-biometric-authentication-entry`
+- Updated `v3-biometric-enrollment-entry`
+- Updated `v3-biometric-kyc-entry`
+- Updated `v3-document-verification-entry`
+- Updated `v3-enhanced-document-verification-entry`
+- Updated `v3-enhanced-kyc-entry`
+- Updated `v3-replay-callback`
+- Updated `v3-report-user-fraud`
+- Updated `v3-services`
+- Updated `v3-smart-selfie-compare-entry`
+- Updated `v3-token`
+- Updated `v3-verification-status`
+
+
 ## [v3.697.0] - 2026-06-24
 
 ### Changed

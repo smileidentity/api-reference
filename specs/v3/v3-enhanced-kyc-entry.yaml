@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: V3 Enhanced KYC Entry API
   version: '1.0.0'
@@ -14,6 +14,8 @@ paths:
   /v3/enhanced_kyc:
     post:
       operationId: submitEnhancedKyc
+      tags:
+        - Enhanced KYC
       summary: Submit Enhanced KYC verification
       description: >-
         Allows submission of Enhanced KYC verification requests and processes the verification asynchronously against the relevant ID authority.
@@ -42,6 +44,7 @@ paths:
         - name: SmileID-Timestamp
           in: header
           required: false
+          x-smile-sdk-exclude: true
           description: >-
             ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
             Required when your Smile ID account is configured to use SDK/partner secret HMAC
@@ -53,6 +56,7 @@ paths:
         - name: SmileID-Request-Signature
           in: header
           required: false
+          x-smile-sdk-exclude: true
           description: >-
             HMAC signature of the raw HTTP request body, computed with your SDK/partner secret
             and the value of SmileID-Timestamp as salt. Required when your Smile ID

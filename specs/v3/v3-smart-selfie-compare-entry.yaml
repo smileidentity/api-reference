@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: V3 Smart Selfie Compare API
   version: '1.0.0'
@@ -16,6 +16,8 @@ paths:
     post:
       summary: Submit smart selfie compare
       operationId: v3SmartSelfieCompare
+      tags:
+        - Smart Selfie Compare
       description: >-
         Compares a selfie image against a provided comparison image (document, ID photo, or portrait).
         The images are uploaded, validated at entry, then queued for async ML processing
@@ -47,6 +49,7 @@ paths:
         - name: SmileID-Timestamp
           in: header
           required: false
+          x-smile-sdk-exclude: true
           description: >-
             ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
           schema:
@@ -55,6 +58,7 @@ paths:
         - name: SmileID-Request-Signature
           in: header
           required: false
+          x-smile-sdk-exclude: true
           description: >-
             HMAC signature of the raw HTTP request body.
           schema:
