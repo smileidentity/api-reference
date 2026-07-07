@@ -7,8 +7,8 @@ info:
 
     Authentication: token-based (SmileID-Token header with JWT from /v3/token).
 
-    The response includes the verification's current state,
-    mapped to one of: processing, complete, or not_found.
+    The response includes the verification's current state as `status`:
+    one of clear, block, attention, error (terminal), processing, or not_found.
 
 paths:
   /v3/status/{jobId}:
@@ -34,17 +34,32 @@ paths:
       responses:
         '200':
           description: Verification has reached a terminal state (clear, block, attention, or error).
+          headers:
+            api_version:
+              $ref: '#/components/headers/ApiVersion'
+            job_id:
+              $ref: '#/components/headers/JobId'
+            user_id:
+              $ref: '#/components/headers/UserId'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/JobStatusResponse'
               example:
-                status: complete
+                status: clear
                 job_id: job_01h2xcejqtf2nbrexx3vqjhp41
                 user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
-                message: 'Verification completed with state: clear'
+                message: Job completed
+                created_at: '2026-07-07T12:34:56.000Z'
         '202':
           description: Verification is still processing.
+          headers:
+            api_version:
+              $ref: '#/components/headers/ApiVersion'
+            job_id:
+              $ref: '#/components/headers/JobId'
+            user_id:
+              $ref: '#/components/headers/UserId'
           content:
             application/json:
               schema:
@@ -53,7 +68,8 @@ paths:
                 status: processing
                 job_id: job_01h2xcejqtf2nbrexx3vqjhp41
                 user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
-                message: Verification is still processing
+                message: Job is still processing
+                created_at: '2026-07-07T12:34:56.000Z'
         '400':
           description: Bad Request — invalid jobId format.
           content:
@@ -83,6 +99,13 @@ paths:
                 message: You are not authorized to do that.
         '404':
           description: Not Found — verification does not exist or does not belong to this partner.
+          headers:
+            api_version:
+              $ref: '#/components/headers/ApiVersion'
+            job_id:
+              $ref: '#/components/headers/JobId'
+            user_id:
+              $ref: '#/components/headers/UserId'
           content:
             application/json:
               schema:
@@ -91,7 +114,8 @@ paths:
                 status: not_found
                 job_id: job_01h2xcejqtf2nbrexx3vqjhp41
                 user_id: unknown
-                message: Verification not found
+                message: Job not found
+                created_at: '2026-07-07T12:34:56.000Z'
         '500':
           description: Internal Server Error
           content:
@@ -109,6 +133,22 @@ components:
       in: header
       name: SmileID-Token
       description: JWT token obtained from `POST /v3/token`.
+  headers:
+    ApiVersion:
+      description: Deployed API version that served the response.
+      schema:
+        type: string
+        example: v3.640.0
+    JobId:
+      description: TypeID format verification identifier.
+      schema:
+        type: string
+        example: job_01h2xcejqtf2nbrexx3vqjhp41
+    UserId:
+      description: User ID associated with the verification ('unknown' when not found).
+      schema:
+        type: string
+        example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
   schemas:
     JobStatusResponse:
       type: object
@@ -117,17 +157,22 @@ components:
         - job_id
         - user_id
         - message
+        - created_at
       properties:
         status:
           type: string
           description: >-
-            Verification status. One of: complete (terminal state reached),
-            processing (still in progress), not_found.
+            Verification status. Terminal states (clear, block, attention, error)
+            are returned with HTTP 200; processing is returned with HTTP 202;
+            not_found is returned with HTTP 404.
           enum:
-            - complete
+            - clear
+            - block
+            - attention
+            - error
             - processing
             - not_found
-          example: complete
+          example: clear
         job_id:
           type: string
           description: TypeID format verification identifier.
@@ -139,7 +184,12 @@ components:
         message:
           type: string
           description: Human-readable status message.
-          example: 'Verification completed with state: clear'
+          example: Job completed
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp the status response was generated (ISO 8601).
+          example: '2026-07-07T12:34:56.000Z'
     ErrorResponse:
       type: object
       required:
