@@ -1,4 +1,9 @@
 openapi: 3.0.3
+servers:
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://api.smileidentity.com
+    description: Production
 info:
   title: V3 Document Verification API
   version: '1.0.0'
@@ -12,6 +17,14 @@ info:
     Authentication: token-based (token header from /v3/token).
 
     At least one of `email` or `phone_number` is required.
+
+    Token Payload: Identity fields (country, id_type, given_names, last_name,
+    email, phone_number, callback_url) can be bound to the authentication token via
+    the token payload feature at /v3/token (PII fields are stored as opaque
+    vault token ids, never raw values). When present in the token, these
+    fields are injected automatically and override any values in the request
+    body. Fields provided via the token do not need to be repeated in the
+    request body; GET /v3/services/config lists them as token_provided_fields.
 paths:
   /v3/document_verification:
     post:
@@ -113,7 +126,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               examples:
                 missingDocument:
                   summary: Missing document image
@@ -155,7 +168,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Unauthorized
                 message: Invalid authentication credentials.
@@ -164,7 +177,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Payment Required
                 message: Insufficient wallet balance.
@@ -173,7 +186,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               examples:
                 productAccess:
                   summary: Product not enabled
@@ -195,7 +208,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Content Too Large
                 message: selfie_image is too large.
@@ -204,7 +217,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Unsupported Media Type
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
@@ -213,7 +226,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Too Many Requests
                 message: Rate limit exceeded. Please try again later.
@@ -222,7 +235,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
@@ -280,7 +293,9 @@ components:
           type: string
           minLength: 2
           maxLength: 2
-          description: ISO 3166-1 alpha-2 country code (uppercase).
+          description: >-
+            ISO 3166-1 alpha-2 country code (uppercase).
+            Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: NG
         id_type:
           type: string
@@ -288,12 +303,16 @@ components:
             ID document type (e.g., DRIVERS_LICENSE, NATIONAL_ID).
             Optional for standard Document Verification — the document type is
             auto-classified if not provided.
+            Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: DRIVERS_LICENSE
         user_details:
           type: object
           required:
             - given_names
             - last_name
+          anyOf:
+            - required: [email]
+            - required: [phone_number]
           description: >-
             Consumer-stated PII fields for the user.
             Either email or phone_number must be provided.
@@ -301,12 +320,16 @@ components:
             given_names:
               type: string
               minLength: 1
-              description: Given name(s) / first name of the individual.
+              description: >-
+                Given name(s) / first name of the individual.
+                Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: John
             last_name:
               type: string
               minLength: 1
-              description: Last name / surname of the individual.
+              description: >-
+                Last name / surname of the individual.
+                Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: Doe
             email:
               type: string
@@ -315,6 +338,7 @@ components:
               description: >-
                 Email address of the individual.
                 At least one of email or phone_number is required.
+                Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: john@example.com
             phone_number:
               type: string
@@ -327,9 +351,11 @@ components:
         callback_url:
           type: string
           format: uri
+          pattern: '^https://'
           description: >-
             URL to receive the async result callback. Falls back to partner default if omitted.
             Must be on the partner's allowed callback domains list.
+            Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: https://example.com/callback
         partner_params:
           type: object
@@ -386,29 +412,40 @@ components:
 
     AcceptedResponse:
       type: object
+      required:
+        - status
+        - message
+        - job_id
+        - user_id
+        - created_at
       properties:
         status:
           type: string
           enum: [accepted]
+          description: Acceptance status for queued verification requests.
         message:
           type: string
+          description: Human-readable acceptance message.
           example: Request accepted and queued for processing.
         job_id:
           type: string
-          description: TypeID format job identifier for tracking.
+          description: TypeID format verification identifier for tracking.
           example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
         user_id:
           type: string
-          description: TypeID format user identifier (or partner-provided User-ID).
+          description: TypeID format user identifier, or partner-provided user identifier.
           example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
         created_at:
           type: string
           format: date-time
-          description: ISO 8601 timestamp of when the job was created.
+          description: ISO 8601 timestamp of when the verification was created.
           example: '2026-03-10T12:00:00.000Z'
 
-    ErrorResponse:
+    ApiErrorResponse:
       type: object
+      required:
+        - status
+        - message
       properties:
         status:
           type: string
@@ -416,5 +453,5 @@ components:
           example: Bad Request
         message:
           type: string
-          description: Human-readable error description.
-          example: "Required field 'country' is missing or invalid."
+          description: Human-readable error message.
+          example: Invalid request.

@@ -1,4 +1,9 @@
 openapi: 3.0.3
+servers:
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://api.smileidentity.com
+    description: Production
 info:
   title: V3 Verification Status API
   version: '1.0.0'
@@ -75,7 +80,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Bad Request
                 message: '"jobId" must be a valid TypeID with prefix ''job_'''
@@ -84,7 +89,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Unauthorized
                 message: Invalid authentication credentials.
@@ -93,7 +98,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Forbidden
                 message: You are not authorized to do that.
@@ -121,7 +126,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
@@ -190,7 +195,7 @@ components:
           format: date-time
           description: Timestamp the status response was generated (ISO 8601).
           example: '2026-07-07T12:34:56.000Z'
-    ErrorResponse:
+    ApiErrorResponse:
       type: object
       required:
         - status
@@ -203,4 +208,4 @@ components:
         message:
           type: string
           description: Human-readable error message.
-          example: '"jobId" must be a valid TypeID with prefix ''job_'''
+          example: Invalid request.
