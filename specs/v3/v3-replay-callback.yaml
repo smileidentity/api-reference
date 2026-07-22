@@ -1,4 +1,9 @@
 openapi: 3.0.3
+servers:
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://api.smileidentity.com
+    description: Production
 info:
   title: V3 Replay Callback API
   version: '1.0.0'
@@ -72,7 +77,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               examples:
                 invalidJobId:
                   summary: Invalid TypeID format
@@ -94,7 +99,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Unauthorized
                 message: Invalid authentication credentials.
@@ -105,7 +110,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Forbidden
                 message: You are not authorized to do that.
@@ -116,7 +121,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               examples:
                 jobNotFound:
                   summary: Verification not found or belongs to another partner
@@ -135,7 +140,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Conflict
                 message: >-
@@ -146,7 +151,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
@@ -165,9 +170,11 @@ components:
         callback_url:
           type: string
           format: uri
+          pattern: '^https://'
           description: >-
             Override callback URL. Must be on the partner's callback domain
             allowlist. If omitted, the stored callback URL is used.
+            Can also be provided via the token payload (see /v3/token).
           example: 'https://partner.example.com/webhook'
     ReplayCallbackResponse:
       type: object
@@ -195,7 +202,7 @@ components:
           type: string
           description: Human-readable confirmation message.
           example: Callback replay queued successfully.
-    ErrorResponse:
+    ApiErrorResponse:
       type: object
       required:
         - status
@@ -203,9 +210,9 @@ components:
       properties:
         status:
           type: string
-          description: HTTP status text (e.g. Bad Request, Not Found, Conflict).
+          description: HTTP status text.
           example: Bad Request
         message:
           type: string
           description: Human-readable error message.
-          example: '"job_id" must be a valid TypeID with prefix ''job_'''
+          example: Invalid request.

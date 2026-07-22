@@ -1,4 +1,9 @@
 openapi: 3.0.3
+servers:
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://api.smileidentity.com
+    description: Production
 info:
   title: V3 Report User Fraud API
   version: 1.0.0
@@ -89,20 +94,20 @@ components:
           description: The `user_id` that was reported.
           example: user-123
 
-    ErrorResponse:
+    ApiErrorResponse:
       type: object
       required:
-        - message
         - status
+        - message
       properties:
-        message:
-          type: string
-          description: Human-readable error message.
-          example: "Required field 'reason' is missing or invalid."
         status:
           type: string
           description: HTTP status text.
           example: Bad Request
+        message:
+          type: string
+          description: Human-readable error message.
+          example: Invalid request.
 
 security:
   - SmileIDToken: []
@@ -197,7 +202,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               examples:
                 missingReason:
                   summary: Missing reason when flagging
@@ -234,7 +239,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 message: Invalid token
                 status: Unauthorized
@@ -246,7 +251,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 message: You are not authorized to do that.
                 status: Forbidden
@@ -255,7 +260,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 message: User not found
                 status: Not Found
@@ -266,7 +271,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
                 status: Unsupported Media Type
@@ -275,7 +280,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 message: System Error
                 status: Internal Server Error

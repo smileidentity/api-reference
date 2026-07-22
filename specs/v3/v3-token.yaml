@@ -1,4 +1,9 @@
 openapi: 3.0.3
+servers:
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://api.smileidentity.com
+    description: Production
 info:
   title: v3 Authentication Token API
   version: '1.0.0'
@@ -64,6 +69,69 @@ paths:
                     - smart_selfie_registration
                     - smart_selfie_compare
                   example: smart_selfie_authentication
+                payload:
+                  type: object
+                  description: >-
+                    Optional identity fields to bind into the token. PII fields
+                    (id_number, given_names, last_name, email, phone_number) are
+                    validated as plaintext, then tokenized via the PII vault — the
+                    issued JWT carries opaque `pii_`-prefixed vault token ids, never
+                    raw PII. country and id_type stay plaintext in the claim, and
+                    callback_url is replaced by a resolvable `callback_`-prefixed id.
+                    Downstream v3 endpoints inject these fields server-side,
+                    overriding any matching fields in the request body, so identity
+                    data bound to the token cannot be altered by the client. Fields
+                    provided here make the corresponding request body fields optional
+                    on downstream endpoints; GET /v3/services/config lists them as
+                    `token_provided_fields`.
+                  properties:
+                    country:
+                      type: string
+                      description: >-
+                        Country code or name. Accepts ISO 3166-1 alpha-2 codes
+                        (e.g. "NG") or full country names (e.g. "Nigeria").
+                        Normalized to uppercase ISO 3166-1 alpha-2 on the server.
+                        If id_type is also provided, the country/id_type combination
+                        is validated.
+                      example: NG
+                    id_type:
+                      type: string
+                      description: >-
+                        ID document type (e.g., NIN, BVN, DRIVERS_LICENSE).
+                        If country is also provided, the combination is validated
+                        against known ID types.
+                      example: NIN
+                    id_number:
+                      type: string
+                      description: >-
+                        ID document number. If country and id_type are also provided,
+                        the format is validated against the expected regex pattern.
+                      example: '12345678901'
+                    given_names:
+                      type: string
+                      description: Given name(s) / first name of the individual.
+                      example: John
+                    last_name:
+                      type: string
+                      description: Last name / surname of the individual.
+                      example: Doe
+                    email:
+                      type: string
+                      format: email
+                      description: Email address of the individual.
+                      example: john@example.com
+                    phone_number:
+                      type: string
+                      description: Phone number in E.164 format.
+                      example: '+2348012345678'
+                    callback_url:
+                      type: string
+                      description: >-
+                        URL to receive the async result callback, or a
+                        `callback_`-prefixed id from a previously issued token.
+                        Overrides the callback_url in the request body of
+                        downstream endpoints.
+                      example: https://example.com/callback
       responses:
         '200':
           description: Success
@@ -81,7 +149,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Bad Request
                 message: 'smileid-partner-id header is required.'
@@ -90,7 +158,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Unauthorized
                 message: Invalid authentication credentials.
@@ -99,7 +167,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Unsupported Media Type
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
@@ -108,15 +176,18 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
 
 components:
   schemas:
-    ErrorResponse:
+    ApiErrorResponse:
       type: object
+      required:
+        - status
+        - message
       properties:
         status:
           type: string
@@ -124,5 +195,5 @@ components:
           example: Bad Request
         message:
           type: string
-          description: Human-readable error description.
-          example: 'smileid-partner-id header is required.'
+          description: Human-readable error message.
+          example: Invalid request.
