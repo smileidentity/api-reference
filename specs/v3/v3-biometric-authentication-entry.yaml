@@ -1,4 +1,9 @@
 openapi: 3.0.3
+servers:
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://api.smileidentity.com
+    description: Production
 info:
   title: V3 Biometric Authentication API
   version: '1.0.0'
@@ -97,7 +102,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
               examples:
                 missingCallbackUrl:
                   summary: Missing callback_url and no default set
@@ -119,37 +124,37 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
         '402':
           description: Payment Required — insufficient wallet balance.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
         '403':
           description: Forbidden — partner not authorized for this product or IP.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
         '415':
           description: Unsupported Media Type — request must be multipart/form-data.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
         '429':
           description: Too Many Requests — rate limit exceeded.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ApiErrorResponse'
 
 components:
   securitySchemes:
@@ -165,6 +170,13 @@ components:
         - user_id
         - consent
         - user_details
+      anyOf:
+        - required: [selfie_image, liveness_images]
+        - required: [use_enrolled_image]
+          properties:
+            use_enrolled_image:
+              type: boolean
+              enum: [true]
       properties:
         user_id:
           type: string
@@ -192,6 +204,9 @@ components:
           required:
             - given_names
             - last_name
+          anyOf:
+            - required: [email]
+            - required: [phone_number]
           description: >-
             Consumer-stated PII fields for the user.
             Either email or phone_number must be provided.
@@ -225,6 +240,7 @@ components:
         callback_url:
           type: string
           format: uri
+          pattern: '^https://'
           description: URL to receive the async result callback.
           example: https://example.com/callback
         sandbox_result:
@@ -268,24 +284,46 @@ components:
 
     AcceptedResponse:
       type: object
+      required:
+        - status
+        - message
+        - job_id
+        - user_id
+        - created_at
       properties:
         status:
           type: string
           enum: [Accepted]
+          description: Acceptance status for queued verification requests.
         message:
           type: string
+          description: Human-readable acceptance message.
+          example: Request accepted and queued for processing.
         job_id:
           type: string
+          description: TypeID format verification identifier for tracking.
+          example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
         user_id:
           type: string
+          description: TypeID format user identifier, or partner-provided user identifier.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
         created_at:
           type: string
           format: date-time
+          description: ISO 8601 timestamp of when the verification was created.
+          example: '2026-03-10T12:00:00.000Z'
 
-    ErrorResponse:
+    ApiErrorResponse:
       type: object
+      required:
+        - status
+        - message
       properties:
         status:
           type: string
+          description: HTTP status text.
+          example: Bad Request
         message:
           type: string
+          description: Human-readable error message.
+          example: Invalid request.

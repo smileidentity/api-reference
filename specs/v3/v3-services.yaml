@@ -1,4 +1,9 @@
 openapi: 3.0.3
+servers:
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://api.smileidentity.com
+    description: Production
 info:
   title: V3 Services API
   version: 1.0.0
@@ -200,8 +205,11 @@ components:
           description: Success rate of the most recent individual check as a percentage.
           example: '90%'
 
-    ErrorResponse:
+    ServiceErrorResponse:
       type: object
+      required:
+        - error
+        - code
       properties:
         error:
           type: string
@@ -256,7 +264,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ServiceErrorResponse'
               example:
                 error: You are not authorized to do that.
                 code: '2413'
@@ -304,7 +312,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ServiceErrorResponse'
               example:
                 error: You are not authorized to do that.
                 code: '2413'
@@ -390,7 +398,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ServiceErrorResponse'
               example:
                 error: >-
                   Country Code must be a valid ISO 3166-1 alpha-2 country code
@@ -401,7 +409,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ServiceErrorResponse'
               example:
                 error: System Error
                 code: '2401'
