@@ -1,0 +1,3419 @@
+openapi: 3.0.3
+info:
+  title: Smile ID V3 API
+  version: 3.0.0
+  description: Canonical public OpenAPI bundle for the Smile ID v3 API.
+servers:
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://api.smileidentity.com
+    description: Production
+tags:
+  - name: Authentication
+  - name: Biometric Authentication
+  - name: Biometric Enrollment
+  - name: Biometric KYC
+  - name: Callback Replay
+  - name: Document Verification
+  - name: Enhanced Document Verification
+  - name: Enhanced KYC
+  - name: Services
+  - name: Smart Selfie Compare
+  - name: Users
+  - name: Verification Status
+paths:
+  /v3/authentication:
+    post:
+      summary: Submit biometric authentication
+      operationId: v3BiometricAuthentication
+      tags:
+        - Biometric Authentication
+      security:
+        - SmileIDToken: []
+      description: >-
+        Authenticates a user by comparing a submitted selfie against their enrolled image. The
+        selfie and liveness images are uploaded, validated at entry, then queued for async ML
+        processing (passive liveness, active liveness, face matching). Results are delivered via
+        callback URL.
+
+        Supports `use_enrolled_image: true` to skip selfie/liveness upload and re-use the enrolled
+        image for the comparison (useful for server-side re-verification).
+      parameters:
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: android
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: 10.4.2
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
+          schema:
+            type: string
+            format: date-time
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: HMAC signature of the raw HTTP request body.
+          schema:
+            type: string
+        - name: User-ID
+          in: header
+          required: false
+          description: Partner-provided user identifier override.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BiometricAuthenticationRequest'
+            encoding:
+              selfie_image:
+                contentType: image/jpeg
+              liveness_images:
+                contentType: image/jpeg
+      responses:
+        '202':
+          description: Accepted — job queued for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: accepted
+                message: Request accepted and queued for processing.
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_auth_001
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: >-
+                      A valid callback_url is required in the request or a default callback URL must
+                      be configured in the portal.
+                missingUserId:
+                  summary: Missing user_id
+                  value:
+                    status: Bad Request
+                    message: Required field 'user_id' is missing or invalid.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '403':
+          description: Forbidden — partner not authorized for this product or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '429':
+          description: Too Many Requests — rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+  /v3/registration:
+    post:
+      summary: Submit biometric enrollment
+      operationId: v3BiometricEnrollment
+      tags:
+        - Biometric Enrollment
+      security:
+        - SmileIDToken: []
+      description: >-
+        Enrolls a user's biometric selfie for future authentication. The selfie and liveness images
+        are uploaded, validated at entry, then processed asynchronously (passive liveness, active
+        liveness). Results are delivered via callback URL.
+      parameters:
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: android
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: 10.4.2
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
+            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            format: date-time
+            example: '2026-03-10T12:00:00.000Z'
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
+            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
+            configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
+        - name: User-ID
+          in: header
+          required: false
+          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BiometricEnrollmentRequest'
+            encoding:
+              selfie_image:
+                contentType: image/jpeg
+              liveness_images:
+                contentType: image/jpeg
+      responses:
+        '202':
+          description: Accepted — verification submitted for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: accepted
+                message: Request accepted and queued for processing.
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingSelfie:
+                  summary: Missing selfie image
+                  value:
+                    status: Bad Request
+                    message: Required field 'selfie_image' is missing or invalid.
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: >-
+                      A valid callback_url is required in the request or a default callback URL must
+                      be configured in the portal.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+                invalidConsent:
+                  summary: Consent not granted
+                  value:
+                    status: Bad Request
+                    message: Required field 'consent.granted' is missing or invalid.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: Insufficient wallet balance.
+        '403':
+          description: Forbidden — partner not authorized for this product or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                productAccess:
+                  summary: Product not enabled
+                  value:
+                    status: Forbidden
+                    message: Product not enabled for this partner.
+                productionAccess:
+                  summary: Production access denied
+                  value:
+                    status: Forbidden
+                    message: Production access is not enabled.
+                sdkVersion:
+                  summary: SDK version blocked
+                  value:
+                    status: Forbidden
+                    message: SDK version not allowed.
+        '413':
+          description: Content Too Large — an uploaded file exceeds the size limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Content Too Large
+                message: selfie_image is too large.
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '429':
+          description: Too Many Requests — rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: Rate limit exceeded. Please try again later.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+  /v3/biometric_kyc:
+    post:
+      summary: Submit Biometric KYC verification
+      operationId: v3BiometricKycEntry
+      tags:
+        - Biometric KYC
+      security:
+        - SmileIDToken: []
+      description: >-
+        Combines biometric selfie verification with KYC identity checks against the relevant ID
+        authority. The selfie and liveness images are uploaded alongside identity details (country,
+        id_type, id_number), validated at entry, then processed asynchronously. Results are
+        delivered via callback URL.
+      parameters:
+        - name: SmileID-Partner-ID
+          in: header
+          required: true
+          description: Partner identifier (numeric, 3+ digits).
+          schema:
+            type: string
+            pattern: ^\d{3,}$
+            example: '1234'
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: android
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: 10.4.2
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
+            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            format: date-time
+            example: '2026-03-10T12:00:00.000Z'
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
+            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
+            configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
+        - name: User-ID
+          in: header
+          required: false
+          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BiometricKycRequest'
+            encoding:
+              selfie_image:
+                contentType: image/jpeg
+              liveness_images:
+                contentType: image/jpeg
+      responses:
+        '202':
+          description: Accepted — verification submitted for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: accepted
+                message: Request accepted and queued for processing.
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingSelfie:
+                  summary: Missing selfie image
+                  value:
+                    status: Bad Request
+                    message: Required field 'selfie_image' is missing or invalid.
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: >-
+                      A valid callback_url is required in the request or a default callback URL must
+                      be configured in the portal.
+                missingCountry:
+                  summary: Missing required field
+                  value:
+                    status: Bad Request
+                    message: Required field 'country' is missing or invalid.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+                invalidConsent:
+                  summary: Consent not granted
+                  value:
+                    status: Bad Request
+                    message: Required field 'consent.granted' is missing or invalid.
+                invalidIdFormat:
+                  summary: Invalid ID number format
+                  value:
+                    status: Bad Request
+                    message: Invalid ID number format for the specified country and ID type.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: Insufficient wallet balance.
+        '403':
+          description: Forbidden — partner not authorized for this product, ID type, or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                productAccess:
+                  summary: Product not enabled
+                  value:
+                    status: Forbidden
+                    message: Product not enabled for this partner.
+                idTypeDisabled:
+                  summary: ID type not enabled
+                  value:
+                    status: Forbidden
+                    message: ID type not enabled for this partner.
+                productionAccess:
+                  summary: Production access denied
+                  value:
+                    status: Forbidden
+                    message: Production access is not enabled.
+                sdkVersion:
+                  summary: SDK version blocked
+                  value:
+                    status: Forbidden
+                    message: SDK version not allowed.
+        '413':
+          description: Content Too Large — an uploaded file exceeds the size limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Content Too Large
+                message: selfie_image is too large.
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '429':
+          description: Too Many Requests — rate limit exceeded for this ID number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: Rate limit exceeded. Please try again later.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+  /v3/document_verification:
+    post:
+      summary: Submit Document Verification
+      operationId: v3DocumentVerificationEntry
+      tags:
+        - Document Verification
+      security:
+        - SmileIDToken: []
+      description: >-
+        Verifies a user's identity by comparing a selfie against a document image. The selfie and
+        liveness images are uploaded alongside a document photo (front, and optionally back). The
+        id_type is optional — the document type is auto-classified if not provided. Results are
+        delivered asynchronously via callback URL.
+      parameters:
+        - name: SmileID-Partner-ID
+          in: header
+          required: true
+          description: Partner identifier (numeric, 3+ digits).
+          schema:
+            type: string
+            pattern: ^\d{3,}$
+            example: '1234'
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: android
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: 10.4.2
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
+            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            format: date-time
+            example: '2026-03-10T12:00:00.000Z'
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
+            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
+            configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
+        - name: User-ID
+          in: header
+          required: false
+          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentVerificationRequest'
+            encoding:
+              selfie_image:
+                contentType: image/jpeg
+              liveness_images:
+                contentType: image/jpeg
+              document:
+                contentType: image/jpeg, image/png
+              document_back:
+                contentType: image/jpeg, image/png
+      responses:
+        '202':
+          description: Accepted — job submitted for processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: accepted
+                message: Request accepted and queued for processing.
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingDocument:
+                  summary: Missing document image
+                  value:
+                    status: Bad Request
+                    message: Required field 'document' is missing or invalid.
+                missingSelfie:
+                  summary: Missing selfie image
+                  value:
+                    status: Bad Request
+                    message: Required field 'selfie_image' is missing or invalid.
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: >-
+                      A valid callback_url is required in the request or a default callback URL must
+                      be configured in the portal.
+                missingCountry:
+                  summary: Missing required field
+                  value:
+                    status: Bad Request
+                    message: Required field 'country' is missing or invalid.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+                invalidConsent:
+                  summary: Consent not granted
+                  value:
+                    status: Bad Request
+                    message: Required field 'consent.granted' is missing or invalid.
+                invalidDocumentMime:
+                  summary: Invalid document image format
+                  value:
+                    status: Bad Request
+                    message: Document image must be JPEG or PNG.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: Insufficient wallet balance.
+        '403':
+          description: Forbidden — partner not authorized for this product or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                productAccess:
+                  summary: Product not enabled
+                  value:
+                    status: Forbidden
+                    message: Product not enabled for this partner.
+                productionAccess:
+                  summary: Production access denied
+                  value:
+                    status: Forbidden
+                    message: Production access is not enabled.
+                sdkVersion:
+                  summary: SDK version blocked
+                  value:
+                    status: Forbidden
+                    message: SDK version not allowed.
+        '413':
+          description: Content Too Large — an uploaded file exceeds the size limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Content Too Large
+                message: selfie_image is too large.
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '429':
+          description: Too Many Requests — rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: Rate limit exceeded. Please try again later.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+  /v3/enhanced_document_verification:
+    post:
+      summary: Submit Enhanced Document Verification
+      operationId: v3EnhancedDocumentVerificationEntry
+      tags:
+        - Enhanced Document Verification
+      security:
+        - SmileIDToken: []
+      description: >-
+        Verifies a user's identity by comparing a selfie against a document image and
+        cross-referencing extracted data for additional verification. The selfie and liveness images
+        are uploaded alongside a document photo (front, and optionally back). The id_type is
+        required for this endpoint. Results are delivered asynchronously via callback URL.
+      parameters:
+        - name: SmileID-Partner-ID
+          in: header
+          required: true
+          description: Partner identifier (numeric, 3+ digits).
+          schema:
+            type: string
+            pattern: ^\d{3,}$
+            example: '1234'
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: android
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: 10.4.2
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
+            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            format: date-time
+            example: '2026-03-10T12:00:00.000Z'
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
+            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
+            configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
+        - name: User-ID
+          in: header
+          required: false
+          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EnhancedDocumentVerificationRequest'
+            encoding:
+              selfie_image:
+                contentType: image/jpeg
+              liveness_images:
+                contentType: image/jpeg
+              document:
+                contentType: image/jpeg, image/png
+              document_back:
+                contentType: image/jpeg, image/png
+      responses:
+        '202':
+          description: Accepted — job submitted for processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: accepted
+                message: Request accepted and queued for processing.
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingDocument:
+                  summary: Missing document image
+                  value:
+                    status: Bad Request
+                    message: Required field 'document' is missing or invalid.
+                missingIdType:
+                  summary: Missing id_type (required for Enhanced DocV)
+                  value:
+                    status: Bad Request
+                    message: Required field 'id_type' is missing or invalid.
+                missingSelfie:
+                  summary: Missing selfie image
+                  value:
+                    status: Bad Request
+                    message: Required field 'selfie_image' is missing or invalid.
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: >-
+                      A valid callback_url is required in the request or a default callback URL must
+                      be configured in the portal.
+                missingCountry:
+                  summary: Missing required field
+                  value:
+                    status: Bad Request
+                    message: Required field 'country' is missing or invalid.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+                invalidConsent:
+                  summary: Consent not granted
+                  value:
+                    status: Bad Request
+                    message: Required field 'consent.granted' is missing or invalid.
+                invalidDocumentMime:
+                  summary: Invalid document image format
+                  value:
+                    status: Bad Request
+                    message: Document image must be JPEG or PNG.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: Insufficient wallet balance.
+        '403':
+          description: Forbidden — partner not authorized for this product, ID type, or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                productAccess:
+                  summary: Product not enabled
+                  value:
+                    status: Forbidden
+                    message: Product not enabled for this partner.
+                idTypeDisabled:
+                  summary: ID type not enabled
+                  value:
+                    status: Forbidden
+                    message: ID type not enabled for this partner.
+                productionAccess:
+                  summary: Production access denied
+                  value:
+                    status: Forbidden
+                    message: Production access is not enabled.
+                sdkVersion:
+                  summary: SDK version blocked
+                  value:
+                    status: Forbidden
+                    message: SDK version not allowed.
+        '413':
+          description: Content Too Large — an uploaded file exceeds the size limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Content Too Large
+                message: selfie_image is too large.
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '429':
+          description: Too Many Requests — rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: Rate limit exceeded. Please try again later.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+  /v3/enhanced_kyc:
+    post:
+      operationId: submitEnhancedKyc
+      tags:
+        - Enhanced KYC
+      security:
+        - SmileIDToken: []
+      summary: Submit Enhanced KYC verification
+      description: >-
+        Allows submission of Enhanced KYC verification requests and processes the verification
+        asynchronously against the relevant ID authority. Results are delivered via callback URL.
+      parameters:
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: android
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: 10.4.2
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
+            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            format: date-time
+            example: '2026-03-10T12:00:00.000Z'
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
+            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
+            configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
+        - name: User-ID
+          in: header
+          required: false
+          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EnhancedKycRequest'
+      responses:
+        '202':
+          description: Accepted — verification submitted for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: accepted
+                message: Request accepted and queued for processing.
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingCountry:
+                  summary: Missing required field
+                  value:
+                    status: Bad Request
+                    message: Required field 'country' is missing or invalid.
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: >-
+                      A valid callback_url is required in the request or a default callback URL must
+                      be configured in the portal.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+                invalidEmail:
+                  summary: Invalid email format
+                  value:
+                    status: Bad Request
+                    message: Field 'email' is invalid.
+                invalidPhone:
+                  summary: Invalid phone number format
+                  value:
+                    status: Bad Request
+                    message: Field 'phone_number' is invalid.
+                invalidIdFormat:
+                  summary: Invalid ID number format
+                  value:
+                    status: Bad Request
+                    message: Invalid ID number format for the specified country and ID type.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: Insufficient wallet balance.
+        '403':
+          description: Forbidden — partner not authorized for this product, ID type, or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                productAccess:
+                  summary: Product not enabled
+                  value:
+                    status: Forbidden
+                    message: Product not enabled for this partner.
+                idTypeDisabled:
+                  summary: ID type not enabled
+                  value:
+                    status: Forbidden
+                    message: ID type not enabled for this partner.
+                productionAccess:
+                  summary: Production access denied
+                  value:
+                    status: Forbidden
+                    message: Production access is not enabled.
+                sdkVersion:
+                  summary: SDK version blocked
+                  value:
+                    status: Forbidden
+                    message: SDK version not allowed.
+        '413':
+          description: Content Too Large — an uploaded file exceeds the size limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Content Too Large
+                message: File is too large.
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '429':
+          description: Too Many Requests — rate limit exceeded for this ID number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: Rate limit exceeded. Please try again later.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+  /v3/replay/{job_id}:
+    post:
+      operationId: replayCallback
+      tags:
+        - Callback Replay
+      security:
+        - SmileIDToken: []
+      summary: Replay a callback for a completed verification
+      description: >-
+        Looks up a previously completed verification by its TypeID, resolves the callback URL, and
+        re-sends the callback. The verification must have reached a terminal state (clear, block,
+        attention, or error) before its callback can be replayed.
+
+        An optional `callback_url` in the request body overrides the stored URL, subject to the
+        partner's callback domain allowlist.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          description: TypeID format verification identifier with 'job_' prefix.
+          schema:
+            type: string
+            pattern: ^job_[0-9a-z]{26}$
+            example: job_01h2xcejqtf2nbrexx3vqjhp41
+      requestBody:
+        required: false
+        description: >-
+          Optional body to override the callback URL. If omitted, the stored callback URL (from the
+          original verification or partner default) is used.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplayCallbackRequest'
+            example:
+              callback_url: https://partner.example.com/webhook
+      responses:
+        '202':
+          description: Callback replay accepted and queued for delivery.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayCallbackResponse'
+              example:
+                status: accepted
+                job_id: job_01h2xcejqtf2nbrexx3vqjhp41
+                user_id: test-user
+                message: Callback replay queued successfully.
+        '400':
+          description: >-
+            Bad Request — invalid job_id format, unrecognised product, or no valid callback URL
+            available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                invalidJobId:
+                  summary: Invalid TypeID format
+                  value:
+                    status: Bad Request
+                    message: '"job_id" must be a valid TypeID with prefix ''job_'''
+                noCallbackUrl:
+                  summary: No callback URL resolvable
+                  value:
+                    status: Bad Request
+                    message: No valid callback URL available
+                unknownProduct:
+                  summary: Product cannot be inferred
+                  value:
+                    status: Bad Request
+                    message: Unable to determine product for this verification
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '403':
+          description: >-
+            Forbidden — IP not in allowlist, callback URL not in allowed domains, or security checks
+            failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Forbidden
+                message: You are not authorized to do that.
+        '404':
+          description: >-
+            Not Found — verification does not exist, does not belong to this partner, or has no
+            reference entry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                jobNotFound:
+                  summary: Verification not found or belongs to another partner
+                  value:
+                    status: Not Found
+                    message: Verification not found
+                referenceNotFound:
+                  summary: Reference entry missing for the verification
+                  value:
+                    status: Not Found
+                    message: Reference not found for this verification
+        '409':
+          description: >-
+            Conflict — verification has not yet reached a terminal state. Wait for processing to
+            complete before replaying the callback.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Conflict
+                message: >-
+                  Verification is still processing. Callbacks can only be replayed for completed
+                  verifications.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+  /v3/users/{user_id}/report_fraud:
+    post:
+      operationId: reportUserFraud
+      tags:
+        - Users
+      summary: Flag or clear fraud status for a user
+      description: |
+        Records a fraud report (or fraud-clearance) for a previously enrolled
+        user.
+
+        Use `is_fraud: true` to flag a user as fraudulent, or `is_fraud: false`
+        to clear a previous flag. Flagging propagates the user's face, device,
+        and biometric clusters to the relevant block lists so that subsequent
+        verifications matching them are rejected. Clearing the flag reverses
+        these effects.
+
+        The response is `202 Accepted` once the request has been validated
+        and handled.
+      security:
+        - SmileIDToken: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: |
+            The partner-scoped user identifier of the enrolled user being
+            reported. This is the `user_id` value originally provided during
+            enrollment.
+          schema:
+            type: string
+          example: user-123
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReportUserFraudRequest'
+            examples:
+              flagFirstParty:
+                summary: Flag a user (reason only)
+                value:
+                  is_fraud: true
+                  reason: FIRST_PARTY_FRAUD
+                  reported_by: risk@partner.example
+              flagWithNotes:
+                summary: Flag a user with optional notes
+                value:
+                  is_fraud: true
+                  reason: ACCOUNT_TAKEOVER
+                  notes: Confirmed via partner internal review
+                  reported_by: risk@partner.example
+              flagOther:
+                summary: Flag a user with reason=OTHER (notes required)
+                value:
+                  is_fraud: true
+                  reason: OTHER
+                  notes: Bespoke fraud pattern observed by internal review
+                  reported_by: risk@partner.example
+              clearFlag:
+                summary: Clear a previous fraud flag (notes required)
+                value:
+                  is_fraud: false
+                  notes: Cleared by appeals review
+                  reported_by: risk@partner.example
+      responses:
+        '202':
+          description: Fraud report accepted and queued for processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportUserFraudAcceptedResponse'
+              example:
+                status: accepted
+                message: Fraud report accepted
+                user_id: user-123
+        '400':
+          description: |
+            Validation error. Possible causes:
+            - `user_id` path parameter is missing.
+            - `is_fraud` is missing or not a boolean.
+            - `reason` is missing when `is_fraud` is `true`, or is not one of
+              the allowed values.
+            - `notes` is missing when `is_fraud` is `false` or `reason` is
+              `OTHER`.
+            - `notes` exceeds 500 characters.
+            - `reported_by` is missing or is not a valid email address.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingReason:
+                  summary: Missing reason when flagging
+                  value:
+                    message: Required field 'reason' is missing or invalid.
+                    status: Bad Request
+                invalidReason:
+                  summary: Unrecognised reason value
+                  value:
+                    message: >-
+                      Field 'reason' must be one of: FIRST_PARTY_FRAUD, SECOND_PARTY_FRAUD,
+                      THIRD_PARTY_FRAUD, SYNTHETIC_IDENTITY, ACCOUNT_TAKEOVER, DOCUMENT_FORGERY,
+                      IDENTITY_FARMING, MULE_ACCOUNT, OTHER.
+                    status: Bad Request
+                missingNotesOnUnblock:
+                  summary: Missing notes when clearing
+                  value:
+                    message: Required field 'notes' is missing or invalid when is_fraud is false.
+                    status: Bad Request
+                missingNotesOnOther:
+                  summary: Missing notes when reason=OTHER
+                  value:
+                    message: Required field 'notes' is missing or invalid when reason is 'OTHER'.
+                    status: Bad Request
+                notesTooLong:
+                  summary: Notes exceed maximum length
+                  value:
+                    message: Field 'notes' must be at most 500 characters.
+                    status: Bad Request
+                invalidEmail:
+                  summary: Invalid reporter email
+                  value:
+                    message: Field 'reported_by' must be a valid email address.
+                    status: Bad Request
+        '401':
+          description: Authentication failed (invalid or missing token).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: Invalid token
+                status: Unauthorized
+        '403':
+          description: |
+            Access denied. Possible causes:
+            - IP address is on the blocklist.
+            - IP not in partner's allowlist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: You are not authorized to do that.
+                status: Forbidden
+        '404':
+          description: No enrollee found for the given `user_id` and partner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: User not found
+                status: Not Found
+        '415':
+          description: |
+            Wrong or missing `Content-Type` header. The request body must be
+            sent as `multipart/form-data`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+                status: Unsupported Media Type
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: System Error
+                status: Internal Server Error
+  /v3/services/bank_codes:
+    get:
+      operationId: getBankCodes
+      tags:
+        - Services
+      summary: List bank codes
+      description: |
+        Returns a list of bank codes supported for bank-account-based identity
+        verification. Optionally filtered by country.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CountryFilter'
+      responses:
+        '200':
+          description: Successful response containing bank codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankCodesResponse'
+              example:
+                bank_codes:
+                  - code: '044'
+                    country: NG
+                    name: Access Bank
+                  - code: '023'
+                    country: NG
+                    name: Citibank
+        '403':
+          description: Request blocked (IP blocked).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceErrorResponse'
+              example:
+                error: You are not authorized to do that.
+                code: '2413'
+  /v3/services/supported_id_types:
+    get:
+      operationId: getSupportedIdTypes
+      tags:
+        - Services
+      summary: List supported KYC ID types
+      description: |
+        Returns a list of all KYC ID types supported for identity verification,
+        including their validation regex, required fields, and optional bank code.
+        Optionally filtered by country.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CountryFilter'
+      responses:
+        '200':
+          description: Successful response containing supported ID types.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedIdTypesResponse'
+              example:
+                id_types:
+                  - country: NG
+                    label: Bank Verification Number
+                    regex: ^\d{11}$
+                    required_fields:
+                      - first_name
+                      - last_name
+                      - dob
+                    type: BVN
+                  - bank_code: '044'
+                    country: NG
+                    label: Bank Account (Access Bank)
+                    regex: ^\d{10}$
+                    required_fields:
+                      - first_name
+                      - last_name
+                    type: BANK_ACCOUNT
+        '403':
+          description: Request blocked (IP blocked).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceErrorResponse'
+              example:
+                error: You are not authorized to do that.
+                code: '2413'
+  /v3/services/supported_documents:
+    get:
+      operationId: getSupportedDocuments
+      tags:
+        - Services
+      summary: List supported documents for verification
+      description: |
+        Returns a list of supported document types for identity verification across all
+        countries served by Smile Identity.
+
+        The response can be filtered by continent or country code. An optional `locale`
+        parameter controls the language of document names.
+
+        This endpoint does not require authentication. It is an alias of
+        `GET /v1/valid_documents` and `GET /v3/valid-documents`.
+      security: []
+      parameters:
+        - name: continent
+          in: query
+          required: false
+          description: Filter results to a single continent.
+          schema:
+            type: string
+            enum:
+              - AFRICA
+              - ASIA
+              - EUROPE
+              - NORTH AMERICA
+              - OCEANIA
+              - SOUTH AMERICA
+          example: AFRICA
+        - name: country_code
+          in: query
+          required: false
+          description: |
+            Filter results to a single country. Must be an ISO 3166-1 alpha-2 code
+            (two uppercase letters).
+          schema:
+            type: string
+            pattern: ^[A-Z]{2}$
+          example: NG
+        - name: locale
+          in: query
+          required: false
+          description: |
+            Locale for document names. Defaults to `en-GB`.
+            Supported values: `en-GB`, `fr-FR`, `ar-EG`.
+          schema:
+            type: string
+            default: en-GB
+            enum:
+              - en-GB
+              - fr-FR
+              - ar-EG
+      responses:
+        '200':
+          description: List of supported documents, optionally filtered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedDocumentsResponse'
+              example:
+                valid_documents:
+                  - country:
+                      code: NG
+                      name: Nigeria
+                      continent: AFRICA
+                    id_types:
+                      - code: DRIVERS_LICENSE
+                        name: Driver's License
+                        example:
+                          - AAA00000AA00
+                        has_back: true
+                      - code: NATIONAL_ID
+                        name: National ID (NIN Slip)
+                        example:
+                          - '00000000000'
+                        has_back: false
+        '400':
+          description: Invalid query parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceErrorResponse'
+              example:
+                error: >-
+                  Country Code must be a valid ISO 3166-1 alpha-2 country code consisting of exactly
+                  two uppercase letters.
+                code: '2413'
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceErrorResponse'
+              example:
+                error: System Error
+                code: '2401'
+  /v3/services/id_status:
+    get:
+      operationId: getIdStatus
+      tags:
+        - Services
+      summary: Get ID type availability status
+      description: |
+        Returns the current availability and success rate for a specific ID type
+        in a given country, based on uptime data from the last hour.
+
+        Requires authentication via JWT token.
+      security:
+        - SmileIDToken: []
+      parameters:
+        - name: country
+          in: query
+          required: true
+          description: ISO 3166-1 alpha-2 country code or full country name (e.g. "NG" or "Nigeria").
+          schema:
+            type: string
+            example: NG
+        - name: id_type
+          in: query
+          required: true
+          description: The ID type code to check status for (e.g. "BVN", "NIN", "VOTER_ID").
+          schema:
+            type: string
+            example: BVN
+      responses:
+        '200':
+          description: ID status retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdStatusResponse'
+              example:
+                last_checked: '2026-04-14T12:30:00.000Z'
+                last_check_status: success
+                last_hour_success_rate: 95%
+                last_known_status: online
+                last_check_success_rate: 90%
+        '400':
+          description: Bad request – missing or invalid parameters, or no uptime data found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdStatusErrorResponse'
+              examples:
+                missingCountry:
+                  summary: Country parameter missing
+                  value:
+                    message: '"country" is required'
+                    status: Bad Request
+                invalidCountry:
+                  summary: Invalid country value
+                  value:
+                    message: Invalid country
+                    status: Bad Request
+                invalidIdType:
+                  summary: ID type not valid for country
+                  value:
+                    message: Invalid id_type for the given country
+                    status: Bad Request
+                noData:
+                  summary: No uptime data in the last hour
+                  value:
+                    message: No data found. Check that NG and BVN are valid inputs
+                    status: Bad Request
+        '401':
+          description: Authentication failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdStatusErrorResponse'
+              example:
+                message: Invalid token
+                status: Unauthorized
+  /v3/compare:
+    post:
+      summary: Submit smart selfie compare
+      operationId: v3SmartSelfieCompare
+      tags:
+        - Smart Selfie Compare
+      security:
+        - SmileIDToken: []
+      description: >-
+        Compares a selfie image against a provided comparison image (document, ID photo, or
+        portrait). The images are uploaded, validated at entry, then queued for async ML processing
+        (passive liveness, face matching, optional active liveness with liveness images). Results
+        are delivered via callback URL.
+
+        If `user_id` is provided and the comparison passes, the user will be enrolled.
+      parameters:
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: ios
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: 10.3.1
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
+          schema:
+            type: string
+            format: date-time
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: HMAC signature of the raw HTTP request body.
+          schema:
+            type: string
+        - name: User-ID
+          in: header
+          required: false
+          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SmartSelfieCompareRequest'
+            encoding:
+              selfie_image:
+                contentType: image/jpeg
+              comparison_image:
+                contentType: image/jpeg
+              liveness_images:
+                contentType: image/jpeg
+      responses:
+        '202':
+          description: Accepted — job queued for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: accepted
+                message: Request accepted and queued for processing.
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: >-
+                      A valid callback_url is required in the request or a default callback URL must
+                      be configured in the portal.
+                missingSelfie:
+                  summary: Missing selfie image
+                  value:
+                    status: Bad Request
+                    message: Required field 'selfie_image' is missing or invalid.
+                missingComparisonImage:
+                  summary: Missing comparison image
+                  value:
+                    status: Bad Request
+                    message: Required field 'comparison_image' is missing or invalid.
+                invalidComparisonType:
+                  summary: Invalid comparison image type
+                  value:
+                    status: Bad Request
+                    message: Field 'comparison_image_type' must be either DOCUMENT, ID_PHOTO, or PORTRAIT.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '403':
+          description: Forbidden — partner not authorized for this product or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '429':
+          description: Too Many Requests — rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+  /v3/token:
+    post:
+      operationId: getV3Token
+      tags:
+        - Authentication
+      summary: Generate v3 Auth Token
+      description: Issues a short-lived JWT for authenticating subsequent v3 API requests.
+      parameters:
+        - name: smileid-partner-id
+          in: header
+          required: true
+          description: Your unique partner identifier. Must be numeric with no leading zeros.
+          schema:
+            type: string
+            pattern: ^[1-9]\d*$
+            example: '1234'
+        - name: smileid-api-key
+          in: header
+          required: true
+          description: Your partner API key for authentication.
+          schema:
+            type: string
+            example: abcd1234key
+      requestBody:
+        description: Optional parameters to be included in the generated token.
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                  description: Optional partner-provided user identifier.
+                partner_params:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: Key-value metadata for partner reference.
+                  example:
+                    pi: '3.14159265359'
+                product:
+                  type: string
+                  description: The product or service the token will be used for.
+                  enum:
+                    - aml
+                    - basic_kyc
+                    - one_time_aml
+                    - biometric_kyc
+                    - address_verification
+                    - document_verification
+                    - enhanced_document_verification
+                    - enhanced_kyc
+                    - phone_number_verification
+                    - smart_selfie_authentication
+                    - smart_selfie_registration
+                    - smart_selfie_compare
+                  example: smart_selfie_authentication
+                payload:
+                  type: object
+                  description: >-
+                    Optional identity fields to bind into the token. PII fields (id_number,
+                    given_names, last_name, email, phone_number) are validated as plaintext, then
+                    tokenized via the PII vault — the issued JWT carries opaque `pii_`-prefixed
+                    vault token ids, never raw PII. country and id_type stay plaintext in the claim,
+                    and callback_url is replaced by a resolvable `callback_`-prefixed id. Downstream
+                    v3 endpoints inject these fields server-side, overriding any matching fields in
+                    the request body, so identity data bound to the token cannot be altered by the
+                    client. Fields provided here make the corresponding request body fields optional
+                    on downstream endpoints; GET /v3/services/config lists them as
+                    `token_provided_fields`.
+                  properties:
+                    country:
+                      type: string
+                      description: >-
+                        Country code or name. Accepts ISO 3166-1 alpha-2 codes (e.g. "NG") or full
+                        country names (e.g. "Nigeria"). Normalized to uppercase ISO 3166-1 alpha-2
+                        on the server. If id_type is also provided, the country/id_type combination
+                        is validated.
+                      example: NG
+                    id_type:
+                      type: string
+                      description: >-
+                        ID document type (e.g., NIN, BVN, DRIVERS_LICENSE). If country is also
+                        provided, the combination is validated against known ID types.
+                      example: NIN
+                    id_number:
+                      type: string
+                      description: >-
+                        ID document number. If country and id_type are also provided, the format is
+                        validated against the expected regex pattern.
+                      example: '12345678901'
+                    given_names:
+                      type: string
+                      description: Given name(s) / first name of the individual.
+                      example: John
+                    last_name:
+                      type: string
+                      description: Last name / surname of the individual.
+                      example: Doe
+                    email:
+                      type: string
+                      format: email
+                      description: Email address of the individual.
+                      example: john@example.com
+                    phone_number:
+                      type: string
+                      description: Phone number in E.164 format.
+                      example: '+2348012345678'
+                    callback_url:
+                      type: string
+                      description: >-
+                        URL to receive the async result callback, or a `callback_`-prefixed id from
+                        a previously issued token. Overrides the callback_url in the request body of
+                        downstream endpoints.
+                      example: https://example.com/callback
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token for authenticating subsequent v3 API requests.
+                    example: ey...
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Bad Request
+                message: smileid-partner-id header is required.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '415':
+          description: Unsupported Media Type — request body, if provided, must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+  /v3/status/{jobId}:
+    get:
+      operationId: getVerificationStatus
+      tags:
+        - Verification Status
+      security:
+        - SmileIDToken: []
+      summary: Get verification status
+      description: >-
+        Retrieves the current status of a previously submitted verification. Returns the latest
+        state from the verification lifecycle (processing, clear, block, attention, error).
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          description: TypeID format verification identifier with 'job_' prefix.
+          schema:
+            type: string
+            pattern: ^job_[0-9a-hjkmnp-tv-z]{26}$
+            example: job_01h2xcejqtf2nbrexx3vqjhp41
+      responses:
+        '200':
+          description: Verification has reached a terminal state (clear, block, attention, or error).
+          headers:
+            api_version:
+              $ref: '#/components/headers/ApiVersion'
+            job_id:
+              $ref: '#/components/headers/JobId'
+            user_id:
+              $ref: '#/components/headers/UserId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+              example:
+                status: clear
+                job_id: job_01h2xcejqtf2nbrexx3vqjhp41
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                message: Job completed
+                created_at: '2026-07-07T12:34:56.000Z'
+        '202':
+          description: Verification is still processing.
+          headers:
+            api_version:
+              $ref: '#/components/headers/ApiVersion'
+            job_id:
+              $ref: '#/components/headers/JobId'
+            user_id:
+              $ref: '#/components/headers/UserId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+              example:
+                status: processing
+                job_id: job_01h2xcejqtf2nbrexx3vqjhp41
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                message: Job is still processing
+                created_at: '2026-07-07T12:34:56.000Z'
+        '400':
+          description: Bad Request — invalid jobId format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Bad Request
+                message: '"jobId" must be a valid TypeID with prefix ''job_'''
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '403':
+          description: Forbidden — IP not in allowlist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Forbidden
+                message: You are not authorized to do that.
+        '404':
+          description: Not Found — verification does not exist or does not belong to this partner.
+          headers:
+            api_version:
+              $ref: '#/components/headers/ApiVersion'
+            job_id:
+              $ref: '#/components/headers/JobId'
+            user_id:
+              $ref: '#/components/headers/UserId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+              example:
+                status: not_found
+                job_id: job_01h2xcejqtf2nbrexx3vqjhp41
+                user_id: unknown
+                message: Job not found
+                created_at: '2026-07-07T12:34:56.000Z'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+components:
+  headers:
+    ApiVersion:
+      description: Deployed API version that served the response.
+      schema:
+        type: string
+        example: v3.640.0
+    JobId:
+      description: TypeID format verification identifier.
+      schema:
+        type: string
+        example: job_01h2xcejqtf2nbrexx3vqjhp41
+    UserId:
+      description: User ID associated with the verification ('unknown' when not found).
+      schema:
+        type: string
+        example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+  parameters:
+    CountryFilter:
+      name: country
+      in: query
+      required: false
+      description: |
+        ISO 3166-1 alpha-2 country code (two uppercase letters). When provided, only
+        items matching this country are returned. When omitted, all items are returned.
+      schema:
+        type: string
+        pattern: ^[A-Z]{2}$
+        example: NG
+  requestBodies: {}
+  responses: {}
+  schemas:
+    BiometricAuthenticationRequest:
+      type: object
+      required:
+        - user_id
+        - consent
+        - user_details
+      anyOf:
+        - required:
+            - selfie_image
+            - liveness_images
+        - required:
+            - use_enrolled_image
+          properties:
+            use_enrolled_image:
+              type: boolean
+              enum:
+                - true
+      properties:
+        user_id:
+          type: string
+          description: The enrolled user's identifier. Must match an existing enrollee.
+          example: user_auth_001
+        selfie_image:
+          type: string
+          format: binary
+          description: JPEG selfie image for authentication. Required unless use_enrolled_image is true.
+        liveness_images:
+          type: array
+          minItems: 6
+          maxItems: 8
+          items:
+            type: string
+            format: binary
+          description: Array of JPEG liveness images. Required unless use_enrolled_image is true.
+        consent:
+          $ref: '#/components/schemas/Consent'
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required:
+                - email
+            - required:
+                - phone_number
+          description: Consumer-stated PII fields for the user. Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              example: Jane
+            last_name:
+              type: string
+              minLength: 1
+              example: Smith
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: At least one of email or phone_number is required.
+              example: jane@example.com
+            phone_number:
+              type: string
+              pattern: ^\+[1-9]\d{6,14}$
+              nullable: true
+              description: Phone number in E.164 format. At least one of email or phone_number is required.
+              example: '+2348012345678'
+        use_enrolled_image:
+          type: boolean
+          default: false
+          description: >-
+            If true, skips selfie and liveness image upload and uses the enrolled image for
+            re-verification. Useful for server-side re-authentication.
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: URL to receive the async result callback.
+          example: https://example.com/callback
+        sandbox_result:
+          type: number
+          description: Force a specific result code in sandbox mode.
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+        metadata:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+    Consent:
+      type: object
+      required:
+        - granted
+        - granted_at
+        - notice_language
+        - notice_privacy_policy_url
+      properties:
+        granted:
+          type: boolean
+          enum:
+            - true
+          description: Must be true; user has granted consent.
+        granted_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when consent was granted.
+          example: '2026-03-06T12:00:00.000Z'
+        notice_language:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Z]{2}$
+          description: ISO 639-1 language code of the privacy notice shown, uppercase.
+          example: EN
+        notice_privacy_policy_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: HTTPS URL of the privacy policy notice shown to the user.
+          example: https://example.com/privacy
+    AcceptedResponse:
+      type: object
+      required:
+        - status
+        - message
+        - job_id
+        - user_id
+        - created_at
+      properties:
+        status:
+          type: string
+          enum:
+            - accepted
+          description: Acceptance status for queued verification requests.
+        message:
+          type: string
+          description: Human-readable acceptance message.
+          example: Request accepted and queued for processing.
+        job_id:
+          type: string
+          description: TypeID format verification identifier for tracking.
+          example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+        user_id:
+          type: string
+          description: TypeID format user identifier, or partner-provided user identifier.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the verification was created.
+          example: '2026-03-10T12:00:00.000Z'
+    ApiErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          description: HTTP status text.
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable error message.
+          example: Invalid request.
+    BiometricEnrollmentRequest:
+      type: object
+      required:
+        - selfie_image
+        - liveness_images
+        - consent
+        - user_details
+      properties:
+        selfie_image:
+          type: string
+          format: binary
+          description: >-
+            JPEG selfie image used as the enrollment reference photo. Must be a clear, well-lit,
+            front-facing photo.
+        liveness_images:
+          type: array
+          minItems: 6
+          maxItems: 8
+          items:
+            type: string
+            format: binary
+          description: >-
+            Array of JPEG liveness sequence images captured during the liveness check. These images
+            are used for passive and active liveness verification.
+        consent:
+          $ref: '#/components/schemas/Consent'
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required:
+                - email
+            - required:
+                - phone_number
+          description: Consumer-stated PII fields for the user. Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              description: >-
+                Given name(s) / first name of the individual being enrolled. Can be provided via the
+                token payload (bound at /v3/token) instead of the request body.
+              example: John
+            last_name:
+              type: string
+              minLength: 1
+              description: >-
+                Last name / surname of the individual being enrolled. Can be provided via the token
+                payload (bound at /v3/token) instead of the request body.
+              example: Doe
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: >-
+                Email address of the individual being enrolled. At least one of email or
+                phone_number is required. Can be provided via the token payload (bound at /v3/token)
+                instead of the request body.
+              example: john@example.com
+            phone_number:
+              type: string
+              pattern: ^\+[1-9]\d{6,14}$
+              nullable: true
+              description: >-
+                Phone number in E.164 format (must start with +). At least one of email or
+                phone_number is required.
+              example: '+2348012345678'
+        allow_new_enroll:
+          type: boolean
+          default: false
+          description: >-
+            If true, allows re-enrollment for a user who is already enrolled. The existing
+            enrollment will be replaced with the new selfie. If false (default), enrollment fails if
+            the user is already enrolled.
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: >-
+            URL to receive the async result callback. Falls back to partner default if omitted. Must
+            be on the partner's allowed callback domains list. Can be provided via the token payload
+            (bound at /v3/token) instead of the request body.
+          example: https://example.com/callback
+        sandbox_result:
+          type: number
+          description: >-
+            Force a specific result code in sandbox/test environments. Only effective when the
+            partner account is in sandbox mode.
+          example: 840
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value metadata for partner reference.
+          example:
+            order_id: ORD-12345
+        metadata:
+          type: array
+          description: Additional metadata entries (e.g., SDK telemetry, device info).
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+    BiometricKycRequest:
+      type: object
+      required:
+        - selfie_image
+        - liveness_images
+        - consent
+        - country
+        - id_type
+        - id_number
+        - user_details
+      properties:
+        selfie_image:
+          type: string
+          format: binary
+          description: >-
+            JPEG selfie image used for biometric verification. Must be a clear, well-lit,
+            front-facing photo.
+        liveness_images:
+          type: array
+          minItems: 6
+          maxItems: 8
+          items:
+            type: string
+            format: binary
+          description: >-
+            Array of JPEG liveness sequence images captured during the liveness check. These images
+            are used for passive and active liveness verification.
+        consent:
+          $ref: '#/components/schemas/Consent'
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: >-
+            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload
+            (bound at /v3/token) instead of the request body.
+          example: NG
+        id_type:
+          type: string
+          description: >-
+            ID document type (e.g., NIN, BVN, DRIVERS_LICENSE). Can be provided via the token
+            payload (bound at /v3/token) instead of the request body.
+          example: NIN
+        id_number:
+          type: string
+          description: >-
+            ID document number. Must match the regex format for the country/id_type. Can be provided
+            via the token payload (bound at /v3/token) instead of the request body.
+          example: '12345678901'
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required:
+                - email
+            - required:
+                - phone_number
+          description: Consumer-stated PII fields for the user. Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              description: >-
+                Given name(s) / first name of the individual. Can be provided via the token payload
+                (bound at /v3/token) instead of the request body.
+              example: John
+            last_name:
+              type: string
+              minLength: 1
+              description: >-
+                Last name / surname of the individual. Can be provided via the token payload (bound
+                at /v3/token) instead of the request body.
+              example: Doe
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: >-
+                Email address of the individual. At least one of email or phone_number is required.
+                Can be provided via the token payload (bound at /v3/token) instead of the request
+                body.
+              example: john@example.com
+            phone_number:
+              type: string
+              pattern: ^\+[1-9]\d{6,14}$
+              nullable: true
+              description: >-
+                Phone number in E.164 format (must start with +). At least one of email or
+                phone_number is required.
+              example: '+2348012345678'
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: >-
+            URL to receive the async result callback. Falls back to partner default if omitted. Must
+            be on the partner's allowed callback domains list. Can be provided via the token payload
+            (bound at /v3/token) instead of the request body.
+          example: https://example.com/callback
+        sandbox_result:
+          type: number
+          description: >-
+            Force a specific result code in sandbox/test environments. Only effective when the
+            partner account is in sandbox mode.
+          example: 1220
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value metadata for partner reference.
+          example:
+            order_id: ORD-12345
+        metadata:
+          type: array
+          description: Additional metadata entries (e.g., SDK telemetry, device info).
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+    DocumentVerificationRequest:
+      type: object
+      required:
+        - selfie_image
+        - liveness_images
+        - consent
+        - country
+        - document
+        - user_details
+      properties:
+        selfie_image:
+          type: string
+          format: binary
+          description: >-
+            JPEG selfie image used for biometric verification. Must be a clear, well-lit,
+            front-facing photo.
+        liveness_images:
+          type: array
+          minItems: 6
+          maxItems: 8
+          items:
+            type: string
+            format: binary
+          description: >-
+            Array of JPEG liveness sequence images captured during the liveness check. These images
+            are used for liveness verification.
+        document:
+          type: string
+          format: binary
+          description: Front of the identity document (JPEG or PNG). Used for document verification.
+        document_back:
+          type: string
+          format: binary
+          description: >-
+            Back of the identity document (JPEG or PNG). Optional. Provide when the document has
+            relevant information on the back (e.g., barcodes, MRZ on some document types).
+        consent:
+          $ref: '#/components/schemas/Consent'
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: >-
+            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload
+            (bound at /v3/token) instead of the request body.
+          example: NG
+        id_type:
+          type: string
+          description: >-
+            ID document type (e.g., DRIVERS_LICENSE, NATIONAL_ID). Optional for standard Document
+            Verification — the document type is auto-classified if not provided. Can be provided via
+            the token payload (bound at /v3/token) instead of the request body.
+          example: DRIVERS_LICENSE
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required:
+                - email
+            - required:
+                - phone_number
+          description: Consumer-stated PII fields for the user. Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              description: >-
+                Given name(s) / first name of the individual. Can be provided via the token payload
+                (bound at /v3/token) instead of the request body.
+              example: John
+            last_name:
+              type: string
+              minLength: 1
+              description: >-
+                Last name / surname of the individual. Can be provided via the token payload (bound
+                at /v3/token) instead of the request body.
+              example: Doe
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: >-
+                Email address of the individual. At least one of email or phone_number is required.
+                Can be provided via the token payload (bound at /v3/token) instead of the request
+                body.
+              example: john@example.com
+            phone_number:
+              type: string
+              pattern: ^\+[1-9]\d{6,14}$
+              nullable: true
+              description: >-
+                Phone number in E.164 format (must start with +). At least one of email or
+                phone_number is required.
+              example: '+2348012345678'
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: >-
+            URL to receive the async result callback. Falls back to partner default if omitted. Must
+            be on the partner's allowed callback domains list. Can be provided via the token payload
+            (bound at /v3/token) instead of the request body.
+          example: https://example.com/callback
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value metadata for partner reference.
+          example:
+            order_id: ORD-12345
+        metadata:
+          type: array
+          description: Additional metadata entries (e.g., SDK telemetry, device info).
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+    EnhancedDocumentVerificationRequest:
+      type: object
+      required:
+        - selfie_image
+        - liveness_images
+        - consent
+        - country
+        - document
+        - id_type
+        - user_details
+      properties:
+        selfie_image:
+          type: string
+          format: binary
+          description: >-
+            JPEG selfie image used for biometric verification. Must be a clear, well-lit,
+            front-facing photo.
+        liveness_images:
+          type: array
+          minItems: 6
+          maxItems: 8
+          items:
+            type: string
+            format: binary
+          description: >-
+            Array of JPEG liveness sequence images captured during the liveness check. These images
+            are used for liveness verification.
+        document:
+          type: string
+          format: binary
+          description: >-
+            Front of the identity document (JPEG or PNG). Used for document verification and data
+            extraction.
+        document_back:
+          type: string
+          format: binary
+          description: >-
+            Back of the identity document (JPEG or PNG). Optional. Provide when the document has
+            relevant information on the back (e.g., barcodes, MRZ on some document types).
+        consent:
+          $ref: '#/components/schemas/Consent'
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: >-
+            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload
+            (bound at /v3/token) instead of the request body.
+          example: NG
+        id_type:
+          type: string
+          description: >-
+            ID document type (e.g., DRIVERS_LICENSE, NATIONAL_ID). Required for Enhanced Document
+            Verification. Can be provided via the token payload (bound at /v3/token) instead of the
+            request body.
+          example: DRIVERS_LICENSE
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required:
+                - email
+            - required:
+                - phone_number
+          description: Consumer-stated PII fields for the user. Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              description: >-
+                Given name(s) / first name of the individual. Can be provided via the token payload
+                (bound at /v3/token) instead of the request body.
+              example: John
+            last_name:
+              type: string
+              minLength: 1
+              description: >-
+                Last name / surname of the individual. Can be provided via the token payload (bound
+                at /v3/token) instead of the request body.
+              example: Doe
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: >-
+                Email address of the individual. At least one of email or phone_number is required.
+                Can be provided via the token payload (bound at /v3/token) instead of the request
+                body.
+              example: john@example.com
+            phone_number:
+              type: string
+              pattern: ^\+[1-9]\d{6,14}$
+              nullable: true
+              description: >-
+                Phone number in E.164 format (must start with +). At least one of email or
+                phone_number is required.
+              example: '+2348012345678'
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: >-
+            URL to receive the async result callback. Falls back to partner default if omitted. Must
+            be on the partner's allowed callback domains list. Can be provided via the token payload
+            (bound at /v3/token) instead of the request body.
+          example: https://example.com/callback
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value metadata for partner reference.
+          example:
+            order_id: ORD-12345
+        metadata:
+          type: array
+          description: Additional metadata entries (e.g., SDK telemetry, device info).
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+    EnhancedKycRequest:
+      type: object
+      required:
+        - country
+        - id_type
+        - id_number
+        - user_details
+        - consent
+      properties:
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: >-
+            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload
+            (bound at /v3/token) instead of the request body.
+          example: NG
+        id_type:
+          type: string
+          description: >-
+            ID document type (e.g., NIN, BVN, DRIVERS_LICENSE). Can be provided via the token
+            payload (bound at /v3/token) instead of the request body.
+          example: NIN
+        id_number:
+          type: string
+          description: >-
+            ID document number. Must match the regex format for the country/id_type. Can be provided
+            via the token payload (bound at /v3/token) instead of the request body.
+          example: '12345678901'
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required:
+                - email
+            - required:
+                - phone_number
+          description: Consumer-stated PII fields for the user. Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              description: >-
+                Given names of the individual. Can be provided via the token payload (bound at
+                /v3/token) instead of the request body.
+              example: John
+            last_name:
+              type: string
+              minLength: 1
+              description: >-
+                Last name / surname of the individual. Can be provided via the token payload (bound
+                at /v3/token) instead of the request body.
+              example: Doe
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: >-
+                Email address. At least one of email or phone_number is required. Can be provided
+                via the token payload (bound at /v3/token) instead of the request body.
+              example: john@example.com
+            phone_number:
+              type: string
+              pattern: ^\+[1-9]\d{6,14}$
+              nullable: true
+              description: >-
+                Phone number in E.164 format (must start with +). At least one of email or
+                phone_number is required.
+              example: '+2348012345678'
+        consent:
+          $ref: '#/components/schemas/Consent'
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: >-
+            URL to receive the async result callback. Falls back to partner default if omitted. Must
+            be on the partner's allowed callback domains list. Can be provided via the token payload
+            (bound at /v3/token) instead of the request body.
+          example: https://example.com/callback
+        bank_code:
+          type: string
+          description: Bank code (required for certain ID types like BANK_ACCOUNT).
+          example: '044'
+        operator:
+          type: string
+          description: Telecom operator (required for certain ID types).
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value metadata for partner reference.
+          example:
+            order_id: ORD-12345
+        metadata:
+          type: array
+          description: Additional metadata entries.
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+    ReplayCallbackRequest:
+      type: object
+      properties:
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: >-
+            Override callback URL. Must be on the partner's callback domain allowlist. If omitted,
+            the stored callback URL is used. Can also be provided via the token payload (see
+            /v3/token).
+          example: https://partner.example.com/webhook
+    ReplayCallbackResponse:
+      type: object
+      required:
+        - status
+        - job_id
+        - user_id
+        - message
+      properties:
+        status:
+          type: string
+          description: Always 'accepted' for successful replay requests.
+          enum:
+            - accepted
+          example: accepted
+        job_id:
+          type: string
+          description: TypeID format verification identifier.
+          example: job_01h2xcejqtf2nbrexx3vqjhp41
+        user_id:
+          type: string
+          description: User ID associated with the verification (from partner_params).
+          example: test-user
+        message:
+          type: string
+          description: Human-readable confirmation message.
+          example: Callback replay queued successfully.
+    ReportUserFraudRequest:
+      type: object
+      required:
+        - is_fraud
+        - reported_by
+      properties:
+        is_fraud:
+          type: boolean
+          description: |
+            `true` to flag the user as fraudulent, `false` to clear a previous
+            fraud flag.
+          example: true
+        reason:
+          type: string
+          description: |
+            Reason for the fraud report. **Required when `is_fraud` is `true`**;
+            ignored when `is_fraud` is `false`. If `OTHER` is selected, `notes`
+            becomes required.
+          enum:
+            - FIRST_PARTY_FRAUD
+            - SECOND_PARTY_FRAUD
+            - THIRD_PARTY_FRAUD
+            - SYNTHETIC_IDENTITY
+            - ACCOUNT_TAKEOVER
+            - DOCUMENT_FORGERY
+            - IDENTITY_FARMING
+            - MULE_ACCOUNT
+            - OTHER
+          example: FIRST_PARTY_FRAUD
+        notes:
+          type: string
+          maxLength: 500
+          description: |
+            Free-form notes describing the fraud report. **Required when**
+            either `is_fraud` is `false` or `reason` is `OTHER`. Optional in
+            all other cases. Capped at 500 characters.
+          example: Account takeover confirmed via partner internal review.
+        reported_by:
+          type: string
+          format: email
+          description: Email address of the person submitting the report.
+          example: risk@partner.example
+      additionalProperties: true
+    ReportUserFraudAcceptedResponse:
+      type: object
+      required:
+        - status
+        - user_id
+      properties:
+        status:
+          type: string
+          enum:
+            - accepted
+          description: Always `accepted` when the request was queued for processing.
+          example: accepted
+        message:
+          type: string
+          description: Human-readable result message.
+          example: Fraud report accepted
+        user_id:
+          type: string
+          description: The `user_id` that was reported.
+          example: user-123
+    BankCode:
+      type: object
+      required:
+        - code
+        - country
+        - name
+      properties:
+        code:
+          type: string
+          description: Numeric bank code assigned by the country's central bank.
+          example: '044'
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2 country code.
+          example: NG
+        name:
+          type: string
+          description: Human-readable bank name.
+          example: Access Bank
+    BankCodesResponse:
+      type: object
+      properties:
+        bank_codes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankCode'
+    SupportedIdType:
+      type: object
+      required:
+        - country
+        - type
+        - label
+        - regex
+      properties:
+        bank_code:
+          type: string
+          description: |
+            Bank code required for this ID type. Only present for ID types that are
+            bank-specific (e.g. `BANK_ACCOUNT`).
+          example: '044'
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2 country code.
+          example: NG
+        label:
+          type: string
+          description: Human-readable label for the ID type.
+          example: Bank Verification Number
+        regex:
+          type: string
+          description: |
+            Regular expression pattern (without delimiters) that the ID number must
+            match for this ID type.
+          example: ^\d{11}$
+        required_fields:
+          type: array
+          items:
+            type: string
+          description: |
+            List of field names that must be provided when submitting a verification
+            request for this ID type (e.g. `first_name`, `last_name`, `dob`).
+          example:
+            - first_name
+            - last_name
+            - dob
+        type:
+          type: string
+          description: Machine-readable ID type code.
+          example: BVN
+    SupportedIdTypesResponse:
+      type: object
+      properties:
+        id_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportedIdType'
+    Country:
+      type: object
+      properties:
+        code:
+          type: string
+          description: ISO 3166-1 alpha-2 country code.
+          example: NG
+        name:
+          type: string
+          description: Country name.
+          example: Nigeria
+        continent:
+          type: string
+          description: Continent name.
+          example: AFRICA
+    IDType:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable ID type code.
+          example: DRIVERS_LICENSE
+        name:
+          type: string
+          description: Human-readable name of the ID type.
+          example: Driver's License
+        example:
+          type: array
+          items:
+            type: string
+          description: Example ID numbers or usage hints.
+        has_back:
+          type: boolean
+          description: Whether this document type has a back side that should be captured.
+          example: true
+    SupportedDocument:
+      type: object
+      properties:
+        country:
+          $ref: '#/components/schemas/Country'
+        id_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/IDType'
+    SupportedDocumentsResponse:
+      type: object
+      required:
+        - valid_documents
+      properties:
+        valid_documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportedDocument'
+    IdStatusResponse:
+      type: object
+      required:
+        - last_checked
+        - last_check_status
+        - last_hour_success_rate
+        - last_known_status
+        - last_check_success_rate
+      properties:
+        last_checked:
+          type: string
+          format: date-time
+          description: Timestamp of the most recent uptime check.
+          example: '2026-04-14T12:30:00.000Z'
+        last_check_status:
+          type: string
+          enum:
+            - success
+            - failure
+          description: Whether the most recent check succeeded or failed.
+          example: success
+        last_hour_success_rate:
+          type: string
+          description: Aggregate success rate over the last hour as a percentage.
+          example: 95%
+        last_known_status:
+          type: string
+          description: The raw status string from the most recent check (e.g. "online", "offline").
+          example: online
+        last_check_success_rate:
+          type: string
+          description: Success rate of the most recent individual check as a percentage.
+          example: 90%
+    ServiceErrorResponse:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.
+        code:
+          type: string
+          description: Smile Identity error code.
+    IdStatusErrorResponse:
+      type: object
+      required:
+        - message
+        - status
+      properties:
+        message:
+          type: string
+          description: Human-readable error message.
+        status:
+          type: string
+          description: HTTP status text (e.g. "Bad Request", "Unauthorized").
+    SmartSelfieCompareRequest:
+      type: object
+      required:
+        - selfie_image
+        - comparison_image
+        - comparison_image_type
+        - consent
+        - user_details
+      properties:
+        selfie_image:
+          type: string
+          format: binary
+          description: JPEG selfie image.
+        comparison_image:
+          type: string
+          format: binary
+          description: JPEG comparison image (ID card photo, ID photo, or portrait).
+        comparison_image_type:
+          type: string
+          enum:
+            - DOCUMENT
+            - ID_PHOTO
+            - PORTRAIT
+          description: Type of comparison image being submitted.
+        consent:
+          $ref: '#/components/schemas/Consent'
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required:
+                - email
+            - required:
+                - phone_number
+          description: Consumer-stated PII fields for the user. Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              example: Alice
+            last_name:
+              type: string
+              minLength: 1
+              example: Johnson
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: At least one of email or phone_number is required.
+              example: alice@example.com
+            phone_number:
+              type: string
+              pattern: ^\+[1-9]\d{6,14}$
+              nullable: true
+              description: Phone number in E.164 format. At least one of email or phone_number is required.
+              example: '+2348012345678'
+        liveness_images:
+          type: array
+          minItems: 6
+          maxItems: 8
+          items:
+            type: string
+            format: binary
+          description: Optional array of JPEG liveness images. If omitted, active liveness check is skipped.
+        allow_new_enroll:
+          type: boolean
+          default: false
+          description: If true, allows re-enrollment for a user who is already enrolled.
+        user_id:
+          type: string
+          description: Optional user identifier. If provided and the job passes, the user will be enrolled.
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: URL to receive the async result callback.
+          example: https://example.com/callback
+        sandbox_result:
+          type: number
+          description: Force a specific result code in sandbox mode.
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+        metadata:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+    JobStatusResponse:
+      type: object
+      required:
+        - status
+        - job_id
+        - user_id
+        - message
+        - created_at
+      properties:
+        status:
+          type: string
+          description: >-
+            Verification status. Terminal states (clear, block, attention, error) are returned with
+            HTTP 200; processing is returned with HTTP 202; not_found is returned with HTTP 404.
+          enum:
+            - clear
+            - block
+            - attention
+            - error
+            - processing
+            - not_found
+          example: clear
+        job_id:
+          type: string
+          description: TypeID format verification identifier.
+          example: job_01h2xcejqtf2nbrexx3vqjhp41
+        user_id:
+          type: string
+          description: User ID associated with the verification.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+        message:
+          type: string
+          description: Human-readable status message.
+          example: Job completed
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp the status response was generated (ISO 8601).
+          example: '2026-07-07T12:34:56.000Z'
+  securitySchemes:
+    SmileIDToken:
+      type: apiKey
+      in: header
+      name: SmileID-Token
+      description: JWT token obtained from `POST /v3/token`.

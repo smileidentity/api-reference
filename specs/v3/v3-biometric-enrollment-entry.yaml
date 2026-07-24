@@ -335,16 +335,12 @@ components:
 
     Consent:
       type: object
-      required:
-        - granted
-        - granted_at
-        - notice_language
-        - notice_privacy_policy_url
+      required: [granted, granted_at, notice_language, notice_privacy_policy_url]
       properties:
         granted:
           type: boolean
           enum: [true]
-          description: Must be true — user has granted consent.
+          description: Must be true; user has granted consent.
         granted_at:
           type: string
           format: date-time
@@ -355,12 +351,13 @@ components:
           minLength: 2
           maxLength: 2
           pattern: '^[A-Z]{2}$'
-          description: ISO 639-1 language code of the privacy notice shown (uppercase).
+          description: ISO 639-1 language code of the privacy notice shown, uppercase.
           example: EN
         notice_privacy_policy_url:
           type: string
           format: uri
-          description: URL of the privacy policy notice shown to the user.
+          pattern: '^https://'
+          description: HTTPS URL of the privacy policy notice shown to the user.
           example: https://example.com/privacy
 
     AcceptedResponse:
