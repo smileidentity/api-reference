@@ -5,11 +5,17 @@ servers:
   - url: https://api.smileidentity.com
     description: Production
 info:
+  contact:
+    name: Smile ID Support
+    url: https://docs.usesmileid.com
+    email: support@usesmileid.com
   title: v3 Authentication Token API
   version: '1.0.0'
   description: >-
     API for generating v3 authentication tokens.
     The issued JWT payload includes `policy` as a number (bitmask) representing partner security policies.
+tags:
+  - name: Authentication
 paths:
   /v3/token:
     post:

@@ -5,6 +5,10 @@ servers:
   - url: https://api.smileidentity.com
     description: Production
 info:
+  contact:
+    name: Smile ID Support
+    url: https://docs.usesmileid.com
+    email: support@usesmileid.com
   title: V3 Document Verification API
   version: '1.0.0'
   description: >-
@@ -25,6 +29,8 @@ info:
     fields are injected automatically and override any values in the request
     body. Fields provided via the token do not need to be repeated in the
     request body; GET /v3/services/config lists them as token_provided_fields.
+tags:
+  - name: Document Verification
 paths:
   /v3/document_verification:
     post:

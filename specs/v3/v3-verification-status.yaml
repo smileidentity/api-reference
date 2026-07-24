@@ -5,6 +5,10 @@ servers:
   - url: https://api.smileidentity.com
     description: Production
 info:
+  contact:
+    name: Smile ID Support
+    url: https://docs.usesmileid.com
+    email: support@usesmileid.com
   title: V3 Verification Status API
   version: '1.0.0'
   description: >-
@@ -15,6 +19,8 @@ info:
     The response includes the verification's current state as `status`:
     one of clear, block, attention, error (terminal), processing, or not_found.
 
+tags:
+  - name: Verification Status
 paths:
   /v3/status/{jobId}:
     get:

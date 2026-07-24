@@ -5,6 +5,10 @@ servers:
   - url: https://api.smileidentity.com
     description: Production
 info:
+  contact:
+    name: Smile ID Support
+    url: https://docs.usesmileid.com
+    email: support@usesmileid.com
   title: V3 Services API
   version: 1.0.0
   description: |
@@ -231,6 +235,8 @@ components:
           type: string
           description: HTTP status text (e.g. "Bad Request", "Unauthorized").
 
+tags:
+  - name: Services
 paths:
   /v3/services/bank_codes:
     get:

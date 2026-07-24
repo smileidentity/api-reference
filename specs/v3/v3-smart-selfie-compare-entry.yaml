@@ -5,6 +5,10 @@ servers:
   - url: https://api.smileidentity.com
     description: Production
 info:
+  contact:
+    name: Smile ID Support
+    url: https://docs.usesmileid.com
+    email: support@usesmileid.com
   title: V3 Smart Selfie Compare API
   version: '1.0.0'
   description: >-
@@ -16,6 +20,8 @@ info:
     Authentication: token-based (token header from /v3/token).
 
     At least one of `email` or `phone_number` is required.
+tags:
+  - name: Smart Selfie Compare
 paths:
   /v3/compare:
     post:
