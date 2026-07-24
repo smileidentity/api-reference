@@ -3,6 +3,10 @@ info:
   title: Smile ID V3 API
   version: 3.0.0
   description: Canonical public OpenAPI bundle for the Smile ID v3 API.
+  contact:
+    name: Smile ID Support
+    url: https://docs.usesmileid.com
+    email: support@usesmileid.com
 servers:
   - url: https://testapi.smileidentity.com
     description: Sandbox
