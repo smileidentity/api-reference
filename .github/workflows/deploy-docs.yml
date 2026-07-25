@@ -28,6 +28,7 @@ jobs:
           set -euo pipefail
           mkdir -p _site/specs/v3
           cp docs/index.html _site/index.html
+          cp docs/tokens.css _site/tokens.css
           cp specs/v3/*.yaml _site/specs/v3/
 
       - name: Rewrite spec paths for flat layout

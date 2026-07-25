@@ -5,27 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Smile ID API Reference</title>
     <meta name="description" content="OpenAPI 3.0 reference for the Smile ID v3 API." />
+    <!-- Smile ID mark, primary blue -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 34' fill='%23151f72'%3E%3Cpath d='M18.154 16.523H0v16.92h18.154v-16.92z'/%3E%3Cpath d='M22.565 0h-.499c-4.625 0-8.761 3.018-8.761 9.653v6.88h18.103v-6.88C31.408 3.018 27.23 0 22.565 0z'/%3E%3C/svg%3E"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Epilogue:wght@600;700;800&display=swap"
       rel="stylesheet"
     />
+    <!-- Smile ID design system tokens (generated; see docs/tokens.css header) -->
+    <link rel="stylesheet" href="tokens.css" />
     <style>
       :root {
-        --brand-navy: #151F72;
-        --brand-navy-deep: #00065C;
-        --brand-blue: #1E40AF;
-        --brand-orange: #FF9B00;
-        --brand-cream: #F9F0E7;
-        --ink: #1F2937;
-        --ink-muted: #4A5565;
-        --line: rgba(255, 255, 255, 0.08);
-        --sidebar-w: 280px;
+        --sidebar-w: 264px;
         --header-h: 64px;
-        --font-sans: "Epilogue", ui-sans-serif, system-ui, -apple-system,
-          BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-          sans-serif;
+        /* Rail is the primary blue stepped down, so no off-palette hex is needed. */
+        --rail-bg: color-mix(in srgb, var(--si-color-primary) 90%, #000);
       }
 
       * { box-sizing: border-box; }
@@ -33,9 +32,11 @@
         margin: 0;
         padding: 0;
         height: 100%;
-        font-family: var(--font-sans);
-        color: var(--ink);
-        background: #fff;
+        font-family: var(--si-text-style-body-font-family);
+        font-size: var(--si-text-style-body-font-size);
+        line-height: var(--si-text-style-body-line-height);
+        color: var(--si-color-text-body);
+        background: var(--si-color-surface);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }
@@ -46,47 +47,41 @@
         left: 0;
         right: 0;
         height: var(--header-h);
-        background: var(--brand-navy);
-        color: #fff;
+        background: var(--si-color-primary);
+        color: var(--si-color-text-inverse);
         display: flex;
         align-items: center;
-        padding: 0 28px;
+        gap: var(--si-spacing-md);
+        padding: 0 var(--si-spacing-lg);
         z-index: 10;
-        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
       }
       #header .wordmark {
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-weight: 700;
-        font-size: 17px;
-        letter-spacing: -0.01em;
         text-decoration: none;
-        color: #fff;
       }
-      #header .wordmark .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--brand-orange);
-      }
+      #header .wordmark svg { height: 22px; width: auto; display: block; }
       #header .subtitle {
-        margin-left: 14px;
-        padding-left: 14px;
-        border-left: 1px solid rgba(255, 255, 255, 0.18);
-        font-size: 13px;
-        font-weight: 400;
-        opacity: 0.78;
+        padding-left: var(--si-spacing-md);
+        border-left: 1px solid rgba(249, 240, 231, 0.24);
+        font-size: var(--si-font-size-14);
+        font-weight: var(--si-font-weight-medium);
+        color: rgba(249, 240, 231, 0.82);
       }
       #header .spacer { flex: 1; }
       #header a.external {
-        color: rgba(255, 255, 255, 0.78);
-        font-size: 13px;
+        color: rgba(249, 240, 231, 0.82);
+        font-size: var(--si-font-size-14);
+        font-weight: var(--si-font-weight-medium);
         text-decoration: none;
-        margin-left: 20px;
-        transition: color 0.15s;
+        padding: 6px var(--si-spacing-sm);
+        border-radius: var(--si-radius-control);
+        transition: background 0.15s, color 0.15s;
       }
-      #header a.external:hover { color: #fff; }
+      #header a.external:hover {
+        color: var(--si-color-text-inverse);
+        background: rgba(249, 240, 231, 0.12);
+      }
 
       #app {
         display: flex;
@@ -97,80 +92,106 @@
       #sidebar {
         width: var(--sidebar-w);
         flex: 0 0 var(--sidebar-w);
-        background: var(--brand-navy-deep);
-        color: rgba(255, 255, 255, 0.92);
+        background: var(--rail-bg);
         overflow-y: auto;
-        padding: 24px 0 32px;
-        font-size: 14px;
+        padding: var(--si-spacing-lg) 0;
         display: flex;
         flex-direction: column;
       }
-      #sidebar > ul:last-of-type { margin-bottom: auto; }
       #sidebar h2 {
-        font-family: var(--font-sans);
-        font-size: 11px;
-        font-weight: 600;
-        margin: 0 0 12px;
-        padding: 0 24px;
-        letter-spacing: 0.12em;
+        font-family: var(--si-text-style-overline-font-family);
+        font-size: var(--si-text-style-overline-font-size);
+        font-weight: var(--si-text-style-overline-font-weight);
+        letter-spacing: var(--si-text-style-overline-letter-spacing);
         text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.55);
+        margin: 0 0 var(--si-spacing-sm);
+        padding: 0 var(--si-spacing-lg);
+        color: rgba(249, 240, 231, 0.6);
       }
-      #sidebar ul { list-style: none; margin: 0 0 24px; padding: 0; }
+      #sidebar ul { list-style: none; margin: 0; padding: 0 var(--si-spacing-sm); }
       #sidebar li a {
         display: block;
-        padding: 9px 24px;
-        color: rgba(255, 255, 255, 0.82);
+        padding: 9px var(--si-spacing-md);
+        margin-bottom: 2px;
+        border-radius: var(--si-radius-sm);
+        color: rgba(249, 240, 231, 0.82);
         text-decoration: none;
-        font-weight: 500;
-        border-left: 3px solid transparent;
-        transition: background 0.15s, color 0.15s, border-color 0.15s;
+        font-size: var(--si-font-size-14);
+        font-weight: var(--si-font-weight-medium);
+        transition: background 0.15s, color 0.15s;
       }
       #sidebar li a:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #fff;
+        background: rgba(249, 240, 231, 0.08);
+        color: var(--si-color-text-inverse);
       }
       #sidebar li a.active {
-        background: rgba(255, 255, 255, 0.07);
-        color: #fff;
-        border-left-color: var(--brand-orange);
-        font-weight: 600;
+        background: rgba(249, 240, 231, 0.14);
+        color: var(--si-color-text-inverse);
+        font-weight: var(--si-font-weight-semibold);
+        box-shadow: inset 3px 0 0 var(--si-color-brand-orange);
       }
       #sidebar .footer {
         margin-top: auto;
-        padding: 20px 24px;
-        border-top: 1px solid var(--line);
-        font-size: 12px;
-        color: rgba(255, 255, 255, 0.55);
-        line-height: 1.5;
+        padding: var(--si-spacing-md) var(--si-spacing-lg) 0;
+        font-size: var(--si-font-size-12);
+        line-height: 1.6;
+        color: rgba(249, 240, 231, 0.6);
       }
       #sidebar .footer a {
-        color: rgba(255, 255, 255, 0.78);
-        text-decoration: none;
-        border-bottom: 1px dotted rgba(255, 255, 255, 0.3);
+        color: rgba(249, 240, 231, 0.82);
+        text-decoration: underline;
+        text-underline-offset: 2px;
       }
-      #sidebar .footer a:hover { color: #fff; }
+      #sidebar .footer a:hover { color: var(--si-color-text-inverse); }
 
       #content {
         flex: 1;
         overflow: auto;
-        background: #fff;
+        background: var(--si-color-surface);
       }
 
-      /* Tighter type inside Redoc to feel native to the wrapper */
-      #redoc-container .api-info h1 { font-family: var(--font-sans); }
+      /* Redoc overrides for the bits its theme object doesn't reach. */
+      #redoc-container h1,
+      #redoc-container h2,
+      #redoc-container h3 { letter-spacing: -0.01em; }
+      #redoc-container [role="navigation"] { border-right: 1px solid var(--si-color-border); }
+      #redoc-container button[type="submit"],
+      #redoc-container .menu-content button { border-radius: var(--si-radius-control); }
 
-      @media (max-width: 768px) {
-        #app { flex-direction: column; }
-        #sidebar { width: 100%; flex: 0 0 auto; max-height: 30vh; }
+      @media (max-width: 860px) {
+        #app { flex-direction: column; height: auto; }
+        #sidebar {
+          width: 100%;
+          flex: 0 0 auto;
+          padding: var(--si-spacing-sm) 0;
+        }
+        #sidebar h2, #sidebar .footer { display: none; }
+        #sidebar ul {
+          display: flex;
+          gap: var(--si-spacing-xs);
+          overflow-x: auto;
+          padding: 0 var(--si-spacing-md);
+          -webkit-overflow-scrolling: touch;
+        }
+        #sidebar li a {
+          white-space: nowrap;
+          margin: 0;
+          border-radius: var(--si-radius-control);
+        }
+        #sidebar li a.active { box-shadow: none; }
+      }
+
+      @media (max-width: 560px) {
+        #header { padding: 0 var(--si-spacing-md); }
+        #header .subtitle,
+        #header a.external:last-of-type { display: none; }
       }
     </style>
   </head>
   <body>
     <header id="header">
-      <a class="wordmark" href="?">
-        <span class="dot"></span>
-        <span>Smile ID</span>
+      <a class="wordmark" href="?" aria-label="Smile ID home">
+        <svg viewBox="0 0 181 34" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="#F9F0E7"><path d="M45.314 25.627c.214 1.453 1.273 3.15 4.177 3.15 2.475 0 3.667-.864 3.667-2.287 0-1.422-.835-2.022-2.353-2.205l-5.135-.549c-4.462-.467-7.08-3.038-7.08-7.245 0-4.684 3.555-7.803 10.687-7.803 7.67 0 10.717 3.597 11.012 7.834h-7.202c-.214-1.595-1.528-2.611-3.78-2.611-1.997 0-3.382.731-3.382 2.032 0 1.057.662 1.85 2.404 1.991l4.177.366c5.634.468 7.997 3.15 7.997 7.611 0 4.756-2.975 8.088-11.155 8.088-7.997 0-10.758-4.135-11.125-8.373h7.09zM95.66 22.477V33.38h-7.131V23.229c0-1.484-1.141-2.805-2.618-2.825-2.19-.02-3.118 1.31-3.118 4.166v8.81h-7.019V23.229c0-1.474-1.14-2.805-2.628-2.825-2.19-.03-3.118 1.31-3.118 4.166v8.81h-7.12V15.252h7.12v2.794c1.131-2.103 3.057-3.373 6.072-3.373 3.016 0 5.053 1.422 6.031 3.84 1.172-2.346 3.128-3.84 6.367-3.84 4.91 0 7.162 3.048 7.162 7.804zM99.022 33.38V18.068h7.131v15.314h-7.131zM109.515 33.38V9.277h7.121V33.38h-7.121zM132.416 27.791h7.029c-.692 3.343-3.392 6.178-10.085 6.178-7.702 0-10.32-4.826-10.32-9.684 0-5.222 3.087-9.612 10.32-9.612 7.966 0 10.106 4.857 10.106 9.867a9.19 9.19 0 01-.102 1.554h-13.376c.356 2.327 1.518 3.19 3.525 3.19 1.375 0 2.394-.66 2.903-1.493zm-6.398-5.609h6.724c-.214-1.89-1.12-2.936-3.27-2.936-1.997 0-3.056.762-3.454 2.936zM153.382 33.38h-7.294l.02-24.103h7.264l.01 24.103zM181 21.278c0 6.198-3.667 12.102-11.481 12.102h-12.796V9.277h12.796c7.814 0 11.481 5.792 11.481 12zm-13.193 6.381c3.892 0 5.603-2.174 5.603-6.381 0-4.207-1.782-6.28-5.603-6.28h-3.779V27.66h3.779zM18.154 16.523H0v16.92h18.154v-16.92z"/><path d="M22.565 0h-.499c-4.625 0-8.761 3.018-8.761 9.653v6.88h18.103v-6.88C31.408 3.018 27.23 0 22.565 0zM106.143 9.268h-7.121v7.107h7.121V9.268z"/></svg>
       </a>
       <span class="subtitle">API Reference</span>
       <div class="spacer"></div>
@@ -228,6 +249,26 @@
     </script>
     <script src="https://cdn.redoc.ly/redoc/v2.4.0/bundles/redoc.standalone.js"></script>
     <script>
+      // Redoc derives tints and shades from these values at runtime, so it needs
+      // literal colours rather than var(--si-*). Every value below is a Smile ID
+      // design system token — keep them in step with tokens.css.
+      const T = {
+        primary: "#151f72",        // color.primary
+        primaryBright: "#4d88ff",  // color.brand.blue-bright
+        cream: "#f9f0e7",          // color.surface-alt
+        orange: "#ff9b00",         // color.feedback.warning.fill
+        orangeBlood: "#ff5805",    // color.brand.orange-blood
+        green: "#06a850",          // color.brand.green
+        red: "#ef4343",            // color.feedback.error.fill
+        title: "#21232c",          // color.text.title
+        body: "#5e646e",           // color.text.body
+        border: "#eaecf0",         // color.border
+        bodyFont: '"DM Sans", system-ui, sans-serif',
+        displayFont: '"Epilogue", "DM Sans", system-ui, sans-serif',
+        codeFont:
+          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
+      };
+
       Redoc.init(
         `../specs/v3/${selected.file}.yaml`,
         {
@@ -236,41 +277,38 @@
           nativeScrollbars: true,
           theme: {
             colors: {
-              primary: { main: "#151F72" },
-              success: { main: "#00A544" },
-              warning: { main: "#FF9B00" },
-              error: { main: "#FB2C36" },
-              text: { primary: "#1F2937", secondary: "#4A5565" },
+              primary: { main: T.primary },
+              success: { main: T.green },
+              warning: { main: T.orange },
+              error: { main: T.red },
+              text: { primary: T.title, secondary: T.body },
+              border: { light: T.border, dark: T.border },
               http: {
-                get: "#1E40AF",
-                post: "#00A544",
-                put: "#FF9B00",
-                delete: "#FB2C36",
-                patch: "#C07EFF"
+                get: T.primaryBright,
+                post: T.green,
+                put: T.orange,
+                patch: T.orangeBlood,
+                delete: T.red
               }
             },
             typography: {
               fontSize: "15px",
-              fontFamily:
-                '"Epilogue", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              headings: {
-                fontFamily:
-                  '"Epilogue", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-                fontWeight: "700"
-              },
-              code: {
-                fontFamily:
-                  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                fontSize: "13px"
-              },
-              links: { color: "#1E40AF", hover: "#001096" }
+              lineHeight: "1.6",
+              fontFamily: T.bodyFont,
+              headings: { fontFamily: T.displayFont, fontWeight: "700", lineHeight: "1.3" },
+              code: { fontFamily: T.codeFont, fontSize: "13px" },
+              links: { color: T.primary, hover: T.primaryBright, visited: T.primary }
             },
             sidebar: {
-              width: "240px",
-              backgroundColor: "#F9F0E7",
-              textColor: "#1F2937"
+              width: "236px",
+              backgroundColor: T.cream,
+              textColor: T.title,
+              activeTextColor: T.primary,
+              groupItems: { textTransform: "uppercase" }
             },
-            rightPanel: { backgroundColor: "#0B0F2C", textColor: "#E2E8F0" }
+            rightPanel: { backgroundColor: T.primary, textColor: T.cream },
+            shape: { borderRadius: "12px" },      // radius.field
+            spacing: { sectionHorizontal: 40, sectionVertical: 24 }
           }
         },
         document.getElementById("redoc-container")
