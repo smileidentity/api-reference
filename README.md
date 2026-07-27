@@ -30,6 +30,19 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 
 Rendered API documentation is available via [GitHub Pages](https://smileidentity.github.io/api-reference/).
 
+The page is styled with the Smile ID design system. `docs/tokens.css` is a verbatim copy of that
+system's generated `dist/css/tokens.css` — don't hand-edit it. To refresh it, copy the file across
+again and record the source revision below. Its own header refers to a `tokens/` directory and a
+build command that belong to the design system repo, not this one.
+
+| | |
+|---|---|
+| Copied from | Smile ID design system, `dist/css/tokens.css` |
+| Copied on | 25 July 2026 |
+
+CI checks that every `--si-*` token `docs/index.html` references is defined in `docs/tokens.css`, so
+a rename in a refreshed copy fails the build rather than silently unstyling the page.
+
 ## Using the Specs
 
 ### Import into Postman

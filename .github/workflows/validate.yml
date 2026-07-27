@@ -17,3 +17,15 @@ jobs:
 
       - name: Lint OpenAPI specs with Spectral
         run: npx --yes @stoplight/spectral-cli@^6.14.0 lint specs/v3/*.yaml --fail-severity error
+
+      - name: Check design tokens referenced by the docs page are defined
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in $(grep -oE -- '--si-[a-z0-9-]+' docs/index.html | sort -u); do
+            if ! grep -qE -- "^[[:space:]]*${name}[[:space:]]*:" docs/tokens.css; then
+              echo "Undefined design token referenced in docs/index.html: $name"
+              missing=1
+            fi
+          done
+          exit $missing
