@@ -3421,3 +3421,4 @@ components:
       in: header
       name: SmileID-Token
       description: JWT token obtained from `POST /v3/token`.
+      x-gitbook-token-placeholder: YOUR_GENERATED_TOKEN
