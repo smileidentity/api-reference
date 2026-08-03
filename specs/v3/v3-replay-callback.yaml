@@ -59,7 +59,7 @@ paths:
           callback URL (from the original verification or partner default)
           is used.
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ReplayCallbackRequest'
             example:
