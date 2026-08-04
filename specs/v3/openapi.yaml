@@ -1210,8 +1210,10 @@ paths:
         description: >-
           Optional body to override the callback URL. If omitted, the stored callback URL (from the
           original verification or partner default) is used.
+
+          Send the body as `multipart/form-data`. Any other content type is rejected with 415.
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ReplayCallbackRequest'
             example:
@@ -1251,7 +1253,7 @@ paths:
                   summary: Product cannot be inferred
                   value:
                     status: Bad Request
-                    message: Unable to determine product for this verification
+                    message: Unable to determine product for this job
         '401':
           description: Unauthorized — invalid or missing authentication credentials.
           content:
@@ -1285,12 +1287,12 @@ paths:
                   summary: Verification not found or belongs to another partner
                   value:
                     status: Not Found
-                    message: Verification not found
+                    message: Job not found
                 referenceNotFound:
                   summary: Reference entry missing for the verification
                   value:
                     status: Not Found
-                    message: Reference not found for this verification
+                    message: Reference not found for this job
         '409':
           description: >-
             Conflict — verification has not yet reached a terminal state. Wait for processing to
@@ -1301,9 +1303,18 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
               example:
                 status: Conflict
-                message: >-
-                  Verification is still processing. Callbacks can only be replayed for completed
-                  verifications.
+                message: Job is still processing. Callbacks can only be replayed for completed jobs.
+        '415':
+          description: >-
+            Unsupported Media Type — a body was sent with a `Content-Type` other than
+            `multipart/form-data`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
         '500':
           description: Internal Server Error
           content:
