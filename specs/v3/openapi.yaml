@@ -21,6 +21,7 @@ tags:
   - name: Document Verification
   - name: Enhanced Document Verification
   - name: Enhanced KYC
+  - name: One-Time AML
   - name: Services
   - name: Smart Selfie Compare
   - name: Users
@@ -1181,6 +1182,420 @@ paths:
               example:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
+  /v3/aml:
+    post:
+      operationId: submitOneTimeAml
+      tags:
+        - One-Time AML
+      security:
+        - SmileIDToken: []
+      summary: Submit One-Time AML screening
+      description: >-
+        Screens the supplied full name (and optional aliases/birth year) against sanctions, PEP, and
+        adverse-media lists for the given countries. Results are delivered asynchronously via
+        callback URL. No human review is performed — the callback carries a terminal outcome.
+      parameters:
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: android
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: 10.4.2
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
+            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            format: date-time
+            example: '2026-03-10T12:00:00.000Z'
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
+            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
+            configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
+        - name: User-ID
+          in: header
+          required: false
+          description: >-
+            Partner-provided user identifier. Must agree with body `user_id` and any token-bound
+            user id — disagreement is a 403. If omitted everywhere, a TypeID is generated
+            automatically.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: >-
+          Sent as multipart/form-data. Scalar fields (full_name, birth_year, strict_match,
+          search_existing_user, user_id, source_sdk, source_sdk_version) are plain form fields.
+          Non-scalar fields must be sent as JSON-encoded strings in their form part: the array
+          fields countries and aliases (e.g. countries='["NG","KE"]') and the object fields consent,
+          user_details, metadata, and partner_params. Multipart has no native array encoding, so a
+          bare or repeated countries field is rejected — it must be a JSON array string.
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OneTimeAmlRequest'
+      responses:
+        '202':
+          description: Accepted — screening submitted for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OneTimeAmlAcceptedResponse'
+              example:
+                status: accepted
+                message: Job submitted successfully
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingCountries:
+                  summary: Missing or invalid countries
+                  value:
+                    status: Bad Request
+                    message: Required field 'countries' is missing or invalid.
+                missingFullName:
+                  summary: Missing or invalid full_name
+                  value:
+                    status: Bad Request
+                    message: Required field 'full_name' is missing or invalid.
+                invalidBirthYear:
+                  summary: Invalid birth_year
+                  value:
+                    status: Bad Request
+                    message: Field 'birth_year' is invalid.
+                invalidStrictMatch:
+                  summary: Invalid strict_match
+                  value:
+                    status: Bad Request
+                    message: Field 'strict_match' is invalid.
+                tooManyAliases:
+                  summary: Too many aliases
+                  value:
+                    status: Bad Request
+                    message: Field 'aliases' must contain at most 20 entries.
+                aliasTooLong:
+                  summary: Alias entry too long
+                  value:
+                    status: Bad Request
+                    message: Field 'aliases' entries must be at most 256 characters.
+                missingUserIdForSearch:
+                  summary: user_id required when search_existing_user is true
+                  value:
+                    status: Bad Request
+                    message: >-
+                      Required field 'user_id' is missing or invalid when search_existing_user is
+                      true.
+                missingConsent:
+                  summary: Consent not granted
+                  value:
+                    status: Bad Request
+                    message: Required field 'consent.granted' is missing or invalid.
+                futureConsent:
+                  summary: consent.granted_at in the future
+                  value:
+                    status: Bad Request
+                    message: Required field 'consent.granted_at' cannot be set in the future.
+                missingUserDetails:
+                  summary: Missing user_details.given_names
+                  value:
+                    status: Bad Request
+                    message: Required field 'user_details.given_names' is missing or invalid.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either user_details.email or user_details.phone_number is required.
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: Required field 'callback_url' is missing or invalid.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: Insufficient wallet balance.
+        '403':
+          description: Forbidden — partner not authorized for this product or IP, or user_id conflict.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                userIdConflict:
+                  summary: Body/header/token user_id disagree
+                  value:
+                    status: Forbidden
+                    message: Token is not authorized for this user ID.
+                productAccess:
+                  summary: Product not enabled
+                  value:
+                    status: Forbidden
+                    message: Product not enabled for this partner.
+                productionAccess:
+                  summary: Production access denied
+                  value:
+                    status: Forbidden
+                    message: Production access is not enabled.
+                sdkVersion:
+                  summary: SDK version blocked
+                  value:
+                    status: Forbidden
+                    message: SDK version not allowed.
+        '404':
+          description: >-
+            Not Found — `search_existing_user` was true but no matching enrollee or usable prior
+            record was found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                noEnrollee:
+                  summary: No enrolled user found for this partner
+                  value:
+                    status: Not Found
+                    message: No enrolled user found for this partner.
+                noUsablePriorRecord:
+                  summary: No usable prior KYC record
+                  value:
+                    status: Not Found
+                    message: No prior KYC record with a usable name and country was found for this user.
+        '413':
+          description: Content Too Large — the request payload exceeds the size limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Content Too Large
+                message: Request payload is too large.
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '429':
+          description: Too Many Requests — rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: Rate limit exceeded. Please try again later.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+      callbacks:
+        oneTimeAmlResult:
+          '{$request.body#/callback_url}':
+            post:
+              summary: One-Time AML result callback
+              description: >-
+                Sent once the screening reaches a terminal state (clear, block, attention, or
+                error). The same body is returned by `GET /v3/status/{jobId}`-driven polling flows
+                that reconstruct the result, and by `POST /v3/replay/{job_id}`.
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/OneTimeAmlCallback'
+                    examples:
+                      clear:
+                        summary: 1031 — no matches found
+                        value:
+                          status: clear
+                          message: 'Screening completed: no matches found.'
+                          reason: null
+                          created_at: '2026-07-20T12:00:00.000Z'
+                          completed_at: '2026-07-20T12:00:01.000Z'
+                          product: one_time_aml
+                          partner_params: null
+                          kyc_receipt: null
+                          strict_match: true
+                          no_of_persons_found: 0
+                          people: []
+                          user_provided_info:
+                            given_names: Nkechi
+                            last_name: Okafor
+                            email: nkechi.okafor@example.com
+                            phone_number: null
+                          consent: {}
+                          antifraud: null
+                          device_signals: null
+                      block_match_found:
+                        summary: 1030/1023 — potential match(es) identified
+                        value:
+                          status: block
+                          message: 'Screening completed: potential matches identified.'
+                          reason: aml_match_found
+                          created_at: '2026-07-20T12:00:00.000Z'
+                          completed_at: '2026-07-20T12:00:01.000Z'
+                          product: one_time_aml
+                          partner_params: null
+                          kyc_receipt: https://receipts.smileidentity.com/...
+                          strict_match: true
+                          no_of_persons_found: 1
+                          people:
+                            - name: Gbenga Afolabi
+                              addresses: []
+                              adverse_media: []
+                              aliases: []
+                              associations: []
+                              dates_of_birth: []
+                              enforcement_actions: []
+                              nationalities: []
+                              sanctions:
+                                - list: OFAC SDN
+                              pep:
+                                pep_level: 1
+                                political_positions:
+                                  - Member of Parliament
+                                sources: []
+                          user_provided_info:
+                            given_names: Gbenga
+                            last_name: Afolabi
+                            email: null
+                            phone_number: '+2348012345678'
+                          consent: {}
+                          antifraud: null
+                          device_signals: null
+                      attention_adverse_media:
+                        summary: 1017 — adverse media only
+                        value:
+                          status: attention
+                          message: 'Screening completed: adverse media identified only.'
+                          reason: adverse_media_match
+                          created_at: '2026-07-20T12:00:00.000Z'
+                          completed_at: '2026-07-20T12:00:01.000Z'
+                          product: one_time_aml
+                          partner_params: null
+                          kyc_receipt: https://receipts.smileidentity.com/...
+                          strict_match: true
+                          no_of_persons_found: 1
+                          people:
+                            - name: Bukola Oni
+                              addresses: []
+                              adverse_media:
+                                - title: Local business dispute reported in the press
+                              aliases: []
+                              associations: []
+                              dates_of_birth: []
+                              enforcement_actions: []
+                              nationalities: []
+                              sanctions: []
+                              pep:
+                                pep_level: null
+                                political_positions: []
+                                sources: []
+                          user_provided_info:
+                            given_names: Bukola
+                            last_name: Oni
+                            email: bukola.oni@example.com
+                            phone_number: null
+                          consent: {}
+                          antifraud: null
+                          device_signals: null
+                      error_service_unavailable:
+                        summary: 1015 — provider unavailable
+                        value:
+                          status: error
+                          message: 'Error: external service unavailable.'
+                          reason: service_unavailable
+                          created_at: '2026-07-20T12:00:00.000Z'
+                          completed_at: '2026-07-20T12:00:01.000Z'
+                          product: one_time_aml
+                          partner_params: null
+                          kyc_receipt: null
+                          strict_match: true
+                          no_of_persons_found: 0
+                          people: []
+                          user_provided_info:
+                            given_names: Ngozi
+                            last_name: Ifeoma
+                            email: ngozi.ifeoma@example.com
+                            phone_number: null
+                          consent: {}
+                          antifraud: null
+                          device_signals: null
+                      block_high_risk:
+                        summary: High antifraud risk — overrides any provider result
+                        value:
+                          status: block
+                          message: Verification failed.
+                          reason: high_risk
+                          created_at: '2026-07-20T12:00:00.000Z'
+                          completed_at: '2026-07-20T12:00:01.000Z'
+                          product: one_time_aml
+                          partner_params: null
+                          kyc_receipt: https://receipts.smileidentity.com/...
+                          strict_match: true
+                          no_of_persons_found: 0
+                          people: []
+                          user_provided_info:
+                            given_names: Rashid
+                            last_name: Omar
+                            email: rashid.omar@example.com
+                            phone_number: null
+                          consent: {}
+                          antifraud:
+                            fraud_risk_level: high
+                            fraud_risk_score: 92
+                            fraud_risk_indicator_groups:
+                              - device_risk
+                          device_signals: null
+              responses:
+                '200':
+                  description: Callback received and acknowledged by the partner endpoint.
   /v3/replay/{job_id}:
     post:
       operationId: replayCallback
@@ -3000,6 +3415,365 @@ components:
               value:
                 type: string
                 maxLength: 1000
+    OneTimeAmlRequest:
+      type: object
+      required:
+        - countries
+        - full_name
+        - consent
+        - user_details
+      properties:
+        user_id:
+          type: string
+          minLength: 1
+          nullable: true
+          description: >-
+            Partner-provided user identifier. Optional in general; required when
+            `search_existing_user` is `true`. Reconciled with the `User-ID` header and any
+            token-bound user id after authentication — disagreement is a 403. Generated
+            automatically as a TypeID when omitted everywhere.
+          example: user-1234
+        countries:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            minLength: 2
+            maxLength: 2
+          description: >-
+            ISO 3166-1 alpha-2 country codes (uppercase) to screen against. Remains authoritative
+            for the screening even when `search_existing_user` is `true`. Sent as a JSON-encoded
+            array string in the multipart part (e.g. `["NG","KE"]`).
+          example:
+            - NG
+            - KE
+        full_name:
+          type: string
+          minLength: 1
+          description: >-
+            Full name to screen. Remains authoritative for the screening — never replaced or
+            compared with prior enrollee information, even when `search_existing_user` is `true`.
+          example: John Doe
+        birth_year:
+          type: string
+          pattern: ^\d{4}$
+          nullable: true
+          description: >-
+            Optional four-digit birth year, minimum 1000 and maximum the current UTC year. A bare
+            integer is also accepted. Full dates, decimals, non-four-digit values, and future years
+            are rejected.
+          example: '1990'
+        strict_match:
+          type: boolean
+          default: true
+          description: >-
+            Optional. When `true` (default), uses the stricter match filter set; when `false`, uses
+            a looser filter set. Accepts standard multipart boolean string representations
+            (`"true"`/`"false"`). Always echoed back on the callback.
+        aliases:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            minLength: 1
+            maxLength: 256
+          description: >-
+            Optional list of alternate names to screen, at most 20 entries, each at most 256
+            characters. Sent as a JSON-encoded array string in the multipart part (e.g. `["Johnny
+            Doe"]`).
+          example:
+            - Johnny Doe
+        search_existing_user:
+          type: boolean
+          default: false
+          description: >-
+            Optional. A gate, not a data source: when `true`, requires the resolved `user_id` to
+            belong to a partner-scoped, non-deleted enrollee with at least one non-expired prior KYC
+            record carrying a usable name and country. It never overwrites `full_name`, `countries`,
+            or `birth_year` — those stay authoritative. Accepts standard multipart boolean string
+            representations.
+        consent:
+          $ref: '#/components/schemas/Consent'
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required:
+                - email
+            - required:
+                - phone_number
+          description: >-
+            Consumer-stated PII fields for the screened user. Either email or phone_number must be
+            provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              description: Given names of the individual.
+              example: John
+            last_name:
+              type: string
+              minLength: 1
+              description: Last name / surname of the individual.
+              example: Doe
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: Email address. At least one of email or phone_number is required.
+              example: john@example.com
+            phone_number:
+              type: string
+              pattern: ^\+[1-9]\d{6,14}$
+              nullable: true
+              description: >-
+                Phone number in E.164 format (must start with +). At least one of email or
+                phone_number is required.
+              example: '+2348012345678'
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: >-
+            URL to receive the async result callback. Falls back to partner default if omitted. Must
+            be on the partner's allowed callback domains list.
+          example: https://example.com/callback
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value metadata for partner reference.
+          example:
+            order_id: ORD-12345
+        metadata:
+          type: array
+          description: Additional metadata entries.
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+        source_sdk:
+          type: string
+          description: Source SDK identifier. Can also be provided via the `SmileID-Source-SDK` header.
+          example: android
+        source_sdk_version:
+          type: string
+          description: Source SDK version. Can also be provided via the `SmileID-Source-SDK-Version` header.
+          example: 10.4.2
+    OneTimeAmlAcceptedResponse:
+      type: object
+      required:
+        - status
+        - message
+        - job_id
+        - user_id
+      properties:
+        status:
+          type: string
+          enum:
+            - accepted
+          description: Acceptance status for the queued screening request.
+        message:
+          type: string
+          enum:
+            - Job submitted successfully
+          description: Human-readable acceptance message.
+        job_id:
+          type: string
+          description: TypeID format verification identifier for tracking.
+          example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+        user_id:
+          type: string
+          description: TypeID format user identifier, or the reconciled partner-provided user identifier.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+    AmlPersonMatch:
+      type: object
+      description: >-
+        A single sanctions/PEP/adverse-media hit. Public snake_case fields only — internal provider
+        references (e.g. sigma_ref) are always stripped before the callback is sent.
+      additionalProperties: true
+      properties:
+        name:
+          type: string
+        addresses:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        adverse_media:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        aliases:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        associations:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        dates_of_birth:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        enforcement_actions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        nationalities:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        sanctions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        pep:
+          type: object
+          properties:
+            pep_level:
+              type: integer
+              nullable: true
+            political_positions:
+              type: array
+              items:
+                type: string
+            sources:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+    OneTimeAmlCallback:
+      type: object
+      required:
+        - status
+        - message
+        - reason
+        - created_at
+        - product
+        - partner_params
+        - kyc_receipt
+        - strict_match
+        - no_of_persons_found
+        - people
+        - user_provided_info
+        - consent
+        - antifraud
+        - device_signals
+      properties:
+        status:
+          type: string
+          enum:
+            - clear
+            - block
+            - attention
+            - error
+          description: Terminal outcome of the screening.
+        message:
+          type: string
+          description: Canonical human-readable outcome message.
+          example: 'Screening completed: no matches found.'
+        reason:
+          type: string
+          nullable: true
+          description: Canonical machine-readable reason. `null` for a clear outcome.
+          enum:
+            - null
+            - aml_match_found
+            - adverse_media_match
+            - service_unavailable
+            - high_risk
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp the screening job started processing.
+        completed_at:
+          type: string
+          format: date-time
+          description: >-
+            ISO 8601 timestamp the terminal outcome was reached. Omitted only if the terminal state
+            could not be read.
+        product:
+          type: string
+          enum:
+            - one_time_aml
+        partner_params:
+          type: object
+          nullable: true
+          additionalProperties:
+            type: string
+          description: >-
+            Partner-supplied key-value metadata, with internal transport keys (`_sandbox_v3`,
+            `job_id`, `job_type`, `user_id`) stripped. `null` when empty.
+        kyc_receipt:
+          type: string
+          nullable: true
+          description: >-
+            Signed receipt URL. `null` on submission; populated for `clear`, `block`, and
+            `attention` outcomes. Remains `null` for `error`.
+        strict_match:
+          type: boolean
+          description: The resolved `strict_match` value used for the screening.
+        no_of_persons_found:
+          type: integer
+          description: Count of sanctions/PEP/adverse-media matches found.
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/AmlPersonMatch'
+        user_provided_info:
+          type: object
+          required:
+            - given_names
+            - last_name
+            - email
+            - phone_number
+          properties:
+            given_names:
+              type: string
+              nullable: true
+            last_name:
+              type: string
+              nullable: true
+            email:
+              type: string
+              nullable: true
+            phone_number:
+              type: string
+              nullable: true
+        consent:
+          type: object
+          additionalProperties: true
+          description: ISO 27560 consent record for the granted consent.
+        antifraud:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Antifraud risk assessment. `null` when no scored fraud result exists for the job.
+        device_signals:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: >-
+            Device/network signals captured at submission time. Always `null` for an `error`
+            outcome, and best-effort `null` when no metadata was captured.
     ReplayCallbackRequest:
       type: object
       properties:
