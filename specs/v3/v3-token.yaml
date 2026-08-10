@@ -14,6 +14,7 @@ info:
   description: >-
     API for generating v3 authentication tokens.
     The issued JWT payload includes `policy` as a number (bitmask) representing partner security policies.
+    It also includes `api_url`, the base URL for subsequent v3 API requests.
 tags:
   - name: Authentication
 paths:
