@@ -2379,16 +2379,18 @@ paths:
                 payload:
                   type: object
                   description: >-
-                    Optional identity fields to bind into the token. PII fields (id_number,
-                    given_names, last_name, email, phone_number) are validated as plaintext, then
-                    tokenized via the PII vault — the issued JWT carries opaque `pii_`-prefixed
-                    vault token ids, never raw PII. country and id_type stay plaintext in the claim,
-                    and callback_url is replaced by a resolvable `callback_`-prefixed id. Downstream
-                    v3 endpoints inject these fields server-side, overriding any matching fields in
-                    the request body, so identity data bound to the token cannot be altered by the
-                    client. Fields provided here make the corresponding request body fields optional
-                    on downstream endpoints; GET /v3/services/config lists them as
-                    `token_provided_fields`.
+                    Optional identity and consent fields to bind into the token. PII fields
+                    (id_number, given_names, last_name, email, phone_number) are validated, then
+                    replaced with opaque `pii_`-prefixed references — the issued JWT never carries
+                    raw PII. country, id_type and the consent fields stay in the clear, and
+                    callback_url is replaced by a resolvable `callback_`-prefixed id. Downstream v3
+                    endpoints inject these fields server-side, overriding any matching fields in the
+                    request body, so data bound to the token cannot be altered by the client. Fields
+                    provided here make the corresponding request body fields optional on downstream
+                    endpoints; GET /v3/services/config lists them as `token_provided_fields`.
+                    Consent takes the same nested object the v3 entry endpoints accept, and all four
+                    of its fields are required when you send it — an incomplete consent object is
+                    rejected with 400 naming the field that is missing.
                   properties:
                     country:
                       type: string
@@ -2434,6 +2436,50 @@ paths:
                         a previously issued token. Overrides the callback_url in the request body of
                         downstream endpoints.
                       example: https://example.com/callback
+                    consent:
+                      type: object
+                      description: >-
+                        ISO 27560 consent record, in the same shape the v3 entry endpoints accept.
+                        Optional as a whole; when present, all four fields are required and no other
+                        field is allowed. Injected as `consent` on downstream endpoints, so a
+                        request that carries it need not repeat consent in the body.
+                      required:
+                        - granted
+                        - granted_at
+                        - notice_language
+                        - notice_privacy_policy_url
+                      additionalProperties: false
+                      properties:
+                        granted:
+                          type: boolean
+                          description: >-
+                            Whether the end user granted consent. Must be `true`; any other value is
+                            rejected.
+                          enum:
+                            - true
+                          example: true
+                        granted_at:
+                          type: string
+                          format: date-time
+                          description: >-
+                            When consent was granted, as an ISO 8601 timestamp. Must not be more
+                            than a minute in the future, so a value stamped from your own clock is
+                            fine. Include the timezone — without one the value is read as UTC.
+                          example: '2026-01-01T09:00:00.000Z'
+                        notice_language:
+                          type: string
+                          pattern: ^[A-Za-z]{2}$
+                          description: >-
+                            Two-letter ISO 639-1 code for the language the privacy notice was shown
+                            in. Normalised to uppercase.
+                          example: EN
+                        notice_privacy_policy_url:
+                          type: string
+                          format: uri
+                          description: >-
+                            URL of the privacy notice the end user was shown. Must use the http or
+                            https scheme.
+                          example: https://example.com/privacy-policy
       responses:
         '200':
           description: Success
@@ -2452,9 +2498,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-              example:
-                status: Bad Request
-                message: smileid-partner-id header is required.
+              examples:
+                missingHeader:
+                  summary: A required header is absent
+                  value:
+                    status: Bad Request
+                    message: smileid-partner-id header is required.
+                partialConsent:
+                  summary: An incomplete consent object was sent
+                  value:
+                    status: Bad Request
+                    message: Required field 'consent.granted_at' is missing or invalid.
         '401':
           description: Unauthorized
           content:
