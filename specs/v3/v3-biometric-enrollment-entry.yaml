@@ -22,12 +22,12 @@ info:
     At least one of `email` or `phone_number` is required.
 
     Token Payload: Identity fields (given_names, last_name, email, phone_number,
-    callback_url) can be bound to the authentication token via the token
-    payload feature at /v3/token (PII fields are stored as opaque vault token
-    ids, never raw values). When present in the token, these fields are
-    injected automatically and override any values in the request body. Fields
-    provided via the token do not need to be repeated in the request body;
-    GET /v3/services/config lists them as token_provided_fields.
+    callback_url) and the ISO 27560 consent fields can be bound to the
+    authentication token via the token payload feature at /v3/token (PII fields
+    are held as opaque references, never raw values). When present in the token,
+    these fields are injected automatically and override any values in the
+    request body. Fields provided via the token do not need to be repeated in
+    the request body; GET /v3/services/config lists them as token_provided_fields.
 tags:
   - name: Biometric Enrollment
 paths:
