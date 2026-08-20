@@ -6,12 +6,18 @@ servers:
     description: Production
 info:
   title: V3 One-Time AML API
-  version: '1.0.0'
+  version: '1.1.0'
   description: >-
-    Async One-Time AML endpoint. Screens a full name against sanctions, PEP,
-    and adverse-media lists (job type 15). Accepts a request, validates at
-    entry, and processes the screening asynchronously. Returns HTTP 202 with a
-    job_id and user_id to track the result via callback.
+    One-Time AML endpoints. Screen a full name against sanctions, PEP, and
+    adverse-media lists (job type 15).
+
+    Two endpoints run the same screening and differ only in how you receive the
+    result. `POST /v3/aml` validates at entry, processes asynchronously, and
+    returns HTTP 202 with a job_id and user_id, delivering the result to your
+    callback URL. `POST /v3/aml/sync` performs the screening inline and returns
+    that same result in the response body, for partners who would rather not
+    host a public webhook endpoint; it sends no callback and takes longer to
+    respond.
 
     Authentication: standard V3 token (SmileID-Token header from /v3/token) or
     V3 HMAC request signature (SmileID-Timestamp + SmileID-Request-Signature
@@ -306,7 +312,7 @@ paths:
                           completed_at: '2026-07-20T12:00:01.000Z'
                           product: one_time_aml
                           partner_params: null
-                          kyc_receipt: null
+                          kyc_receipt: 'https://receipts.smileidentity.com/...'
                           strict_match: true
                           no_of_persons_found: 0
                           people: []
@@ -442,6 +448,423 @@ paths:
               responses:
                 '200':
                   description: Callback received and acknowledged by the partner endpoint.
+  /v3/aml/sync:
+    post:
+      operationId: submitOneTimeAmlSync
+      tags:
+        - One-Time AML
+      security:
+        - SmileIDToken: []
+      summary: Submit One-Time AML screening and receive the result inline
+      description: >-
+        Synchronous counterpart to `POST /v3/aml`. Runs the same One-Time AML
+        screening (job type 15) and returns the terminal result in the response
+        body instead of delivering it to a callback URL, so a verification can
+        be completed in a single request without hosting a public webhook
+        endpoint.
+
+        The request body and every entry validation are identical to the async
+        endpoint, with one exception: `callback_url` is optional here. If you do
+        supply one it is stored so `POST /v3/replay/{job_id}` can use it later,
+        but no webhook is ever sent — the result is in this response.
+
+        The 200 body is exactly the payload the async callback would have
+        delivered, so a partner can move between the two endpoints without
+        changing how they parse a result.
+
+        The response carries `Response-Signature` and `Response-Timestamp`,
+        computed the same way as on our webhooks, so existing signature
+        verification applies unchanged.
+
+        Screening is performed inline against the provider, so this endpoint is
+        slower than the async one and is bounded by a request deadline. If the
+        provider does not answer within it, the response is a 408 and no charge
+        is made.
+
+        Every response returned after the job is created carries a
+        `SmileID-Job-ID` header, and a completed screening can always be read
+        back from `GET /v3/status/{jobId}` — so if you have a job id, read it
+        rather than resubmitting. If you do not (a network failure, or the
+        gateway timing the request out on its own), resubmit with the same
+        `SmileID-Idempotency-Key`: the retry resolves to the same job and returns
+        the original result instead of running a second, separately billed
+        screening.
+      parameters:
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: 'android'
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: '10.4.2'
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
+            Required when your Smile ID account is configured to use SDK/partner secret HMAC
+            authentication.
+          schema:
+            type: string
+            format: date-time
+            example: '2026-03-10T12:00:00.000Z'
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret
+            and the value of SmileID-Timestamp as salt. Required when your Smile ID
+            account is configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            example: '4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2'
+        - name: User-ID
+          in: header
+          required: false
+          description: >-
+            Partner-provided user identifier. Must agree with body `user_id` and any
+            token-bound user id — disagreement is a 403. If omitted everywhere, a TypeID
+            is generated automatically.
+          schema:
+            type: string
+        - name: SmileID-Idempotency-Key
+          in: header
+          required: false
+          description: >-
+            Opaque key, 16 to 128 characters of `A-Z a-z 0-9 - _`, that makes a
+            submission safe to repeat. The job id is derived from it, so a request
+            carrying a key you have already used resolves to that same job: it
+            returns the original result and screens — and bills — nothing a second
+            time. Send one whenever you might retry, since a retry without a key
+            starts a new, separately billed screening.
+          schema:
+            type: string
+            example: kuda-onboarding-8f14e45fceea167a
+      requestBody:
+        required: true
+        description: >-
+          Identical to `POST /v3/aml`, except that `callback_url` is optional
+          because no callback is sent. Sent as multipart/form-data. Scalar
+          fields (full_name, birth_year, strict_match, search_existing_user,
+          user_id, source_sdk, source_sdk_version) are plain form fields.
+          Non-scalar fields must be sent as JSON-encoded strings in their form
+          part: the array fields countries and aliases (e.g.
+          countries='["NG","KE"]') and the object fields consent, user_details,
+          metadata, and partner_params. Multipart has no native array encoding,
+          so a bare or repeated countries field is rejected — it must be a JSON
+          array string.
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OneTimeAmlRequest'
+      responses:
+        '200':
+          description: >-
+            Screening completed. The body is the terminal result — the same
+            payload the async callback would have delivered.
+          headers:
+            Response-Signature:
+              description: >-
+                Signature over Response-Timestamp and your partner id, keyed with your API
+                key. Identical in construction to the signature we send on webhooks, so
+                existing verification code applies unchanged.
+              schema:
+                type: string
+                example: 'Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MGFiY2RlZmdoaWo='
+            Response-Timestamp:
+              description: ISO 8601 timestamp the signature was computed over.
+              schema:
+                type: string
+                format: date-time
+                example: '2026-07-20T12:00:01.000Z'
+            SmileID-Job-ID:
+              description: The Smile job id for this screening.
+              schema:
+                type: string
+                example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+            User-ID:
+              description: The partner-scoped user id for this screening.
+              schema:
+                type: string
+                example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OneTimeAmlCallback'
+              examples:
+                clear:
+                  summary: '1031 — no matches found'
+                  value:
+                    status: clear
+                    message: 'Screening completed: no matches found.'
+                    reason: null
+                    created_at: '2026-07-20T12:00:00.000Z'
+                    completed_at: '2026-07-20T12:00:01.000Z'
+                    product: one_time_aml
+                    partner_params: null
+                    kyc_receipt: 'https://receipts.smileidentity.com/...'
+                    strict_match: true
+                    no_of_persons_found: 0
+                    people: []
+                    user_provided_info:
+                      given_names: Nkechi
+                      last_name: Okafor
+                      email: nkechi.okafor@example.com
+                      phone_number: null
+                    consent: {}
+                    antifraud: null
+                    device_signals: null
+                block_match_found:
+                  summary: '1030/1023 — potential match(es) identified'
+                  value:
+                    status: block
+                    message: 'Screening completed: potential matches identified.'
+                    reason: aml_match_found
+                    created_at: '2026-07-20T12:00:00.000Z'
+                    completed_at: '2026-07-20T12:00:01.000Z'
+                    product: one_time_aml
+                    partner_params: null
+                    kyc_receipt: 'https://receipts.smileidentity.com/...'
+                    strict_match: true
+                    no_of_persons_found: 1
+                    people:
+                      - name: Gbenga Afolabi
+                        addresses: []
+                        adverse_media: []
+                        aliases: []
+                        associations: []
+                        dates_of_birth: []
+                        enforcement_actions: []
+                        nationalities: []
+                        sanctions:
+                          - list: OFAC SDN
+                        pep:
+                          pep_level: 1
+                          political_positions:
+                            - Member of Parliament
+                          sources: []
+                    user_provided_info:
+                      given_names: Gbenga
+                      last_name: Afolabi
+                      email: gbenga.afolabi@example.com
+                      phone_number: null
+                    consent: {}
+                    antifraud: null
+                    device_signals: null
+                attention_adverse_media:
+                  summary: '1017 — adverse media identified only'
+                  value:
+                    status: attention
+                    message: 'Screening completed: adverse media identified only.'
+                    reason: adverse_media_match
+                    created_at: '2026-07-20T12:00:00.000Z'
+                    completed_at: '2026-07-20T12:00:01.000Z'
+                    product: one_time_aml
+                    partner_params: null
+                    kyc_receipt: 'https://receipts.smileidentity.com/...'
+                    strict_match: true
+                    no_of_persons_found: 1
+                    people:
+                      - name: Bukola Oni
+                        addresses: []
+                        adverse_media:
+                          - title: Local business dispute reported in the press
+                        aliases: []
+                        associations: []
+                        dates_of_birth: []
+                        enforcement_actions: []
+                        nationalities: []
+                        sanctions: []
+                        pep:
+                          pep_level: null
+                          political_positions: []
+                          sources: []
+                    user_provided_info:
+                      given_names: Bukola
+                      last_name: Oni
+                      email: bukola.oni@example.com
+                      phone_number: null
+                    consent: {}
+                    antifraud: null
+                    device_signals: null
+                block_high_risk:
+                  summary: Fraud risk blocked the request before screening ran
+                  value:
+                    status: block
+                    message: 'Verification failed.'
+                    reason: high_risk
+                    created_at: '2026-07-20T12:00:00.000Z'
+                    completed_at: '2026-07-20T12:00:01.000Z'
+                    product: one_time_aml
+                    partner_params: null
+                    kyc_receipt: 'https://receipts.smileidentity.com/...'
+                    strict_match: true
+                    no_of_persons_found: 0
+                    people: []
+                    user_provided_info:
+                      given_names: Rashid
+                      last_name: Omar
+                      email: rashid.omar@example.com
+                      phone_number: null
+                    consent: {}
+                    antifraud:
+                      fraud_risk_level: high
+                      fraud_risk_score: 92
+                      fraud_risk_indicator_groups:
+                        - device_risk
+                    device_signals: null
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingCountries:
+                  summary: Missing or invalid countries
+                  value:
+                    status: Bad Request
+                    message: "Required field 'countries' is missing or invalid."
+                missingFullName:
+                  summary: Missing or invalid full_name
+                  value:
+                    status: Bad Request
+                    message: "Required field 'full_name' is missing or invalid."
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: You are out of credits. Add funds to your wallet to run more verifications.
+        '403':
+          description: >-
+            Forbidden — product not enabled, IP not allowlisted, production access
+            not granted, or a user id conflict between body, header, and token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                productNotEnabled:
+                  summary: One-Time AML not enabled for this partner
+                  value:
+                    status: Forbidden
+                    message: This feature requires you to activate ID Validation for your Smile ID account.
+                ipNotAllowed:
+                  summary: Caller IP not on the partner allowlist
+                  value:
+                    status: Forbidden
+                    message: You are not authorized to do that.
+        '404':
+          description: >-
+            Not Found — `search_existing_user` was true but no usable prior record
+            exists for this user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                noEnrollee:
+                  summary: No enrolled user for this partner
+                  value:
+                    status: Not Found
+                    message: No enrolled user found for this partner.
+                noUsablePriorRecord:
+                  summary: No usable prior KYC record
+                  value:
+                    status: Not Found
+                    message: No prior KYC record with a usable name and country was found for this user.
+        '408':
+          description: >-
+            Request Timeout — the screening provider did not answer within the
+            request deadline, so no result was produced and nothing is billed. The
+            job exists and is terminal in `error`, so `GET /v3/status/{jobId}` will
+            only ever return that error: resubmit rather than poll. Send
+            `SmileID-Idempotency-Key` to make the resubmission safe to repeat.
+          headers:
+            SmileID-Job-ID:
+              description: The Smile job id to poll for this screening.
+              schema:
+                type: string
+                example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Request Timeout
+                message: >-
+                  The screening provider did not respond in time. The job is still recorded —
+                  retrieve its result from /v3/status/{job_id}.
+        '413':
+          description: Content Too Large — the request payload exceeds the size limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Content Too Large
+                message: Request payload is too large.
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '429':
+          description: Too Many Requests — rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: Rate limit exceeded. Please try again later.
+        '500':
+          description: >-
+            Internal Server Error. A screening that could not be completed for an
+            internal reason is reported here rather than as a 200 carrying
+            `status: error`. As with a 408, the job exists and its outcome can be
+            read from `GET /v3/status/{jobId}`.
+          headers:
+            SmileID-Job-ID:
+              description: >-
+                The Smile job id to poll for this screening. Present when the failure
+                happened after the job was created.
+              schema:
+                type: string
+                example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
 components:
   securitySchemes:
     SmileIDToken:
