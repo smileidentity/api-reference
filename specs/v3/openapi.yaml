@@ -13,6 +13,7 @@ servers:
   - url: https://api.smileidentity.com
     description: Production
 tags:
+  - name: AML Monitoring
   - name: Authentication
   - name: Biometric Authentication
   - name: Biometric Enrollment
@@ -27,6 +28,220 @@ tags:
   - name: Users
   - name: Verification Status
 paths:
+  /v3/aml/monitoring:
+    post:
+      operationId: submitAmlMonitoring
+      tags:
+        - AML Monitoring
+      security:
+        - SmileIDToken: []
+      summary: Submit AML Monitoring screening
+      description: >-
+        Submits an AML Monitoring screening request and processes it asynchronously against global
+        watchlists, enrolling the entity for ongoing monitoring. Results are delivered via callback
+        URL.
+      parameters:
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: android
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: 10.4.2
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
+            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            format: date-time
+            example: '2026-03-10T12:00:00.000Z'
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
+            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
+            configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
+        - name: User-ID
+          in: header
+          required: false
+          description: >-
+            Partner-provided user identifier. If omitted, a TypeID is generated automatically. Must
+            agree with body `user_id` and any token-bound user id — disagreement is a 403. When
+            `search_existing_user` is true, the body `user_id` is required.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: >-
+          multipart/form-data. Array fields (`countries`, `aliases`) must be sent as a single
+          JSON-encoded string (e.g. `countries='["NG","GH"]'`), not as repeated form fields —
+          multipart has no array encoding and a repeated field is overwritten, which fails
+          validation.
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AmlMonitoringRequest'
+      responses:
+        '202':
+          description: Accepted — screening submitted for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: accepted
+                message: Request accepted and queued for processing.
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingCountries:
+                  summary: Missing required field
+                  value:
+                    status: Bad Request
+                    message: Required field 'countries' is missing or invalid.
+                missingFullName:
+                  summary: full_name required when not reusing an existing user
+                  value:
+                    status: Bad Request
+                    message: Required field 'full_name' is missing or invalid.
+                searchExistingUserNeedsUserId:
+                  summary: user_id required when search_existing_user is true
+                  value:
+                    status: Bad Request
+                    message: >-
+                      Required field 'user_id' is missing or invalid when search_existing_user is
+                      true.
+                invalidBirthYear:
+                  summary: birth_year is not a four digit year
+                  value:
+                    status: Bad Request
+                    message: Field 'birth_year' must be a four digit year.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either user_details.email or user_details.phone_number is required.
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: >-
+                      A valid callback_url is required in the request or a default callback URL must
+                      be configured in the portal.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: Insufficient wallet balance.
+        '403':
+          description: Forbidden — partner not authorized for this product or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                productAccess:
+                  summary: Product not enabled
+                  value:
+                    status: Forbidden
+                    message: Product not enabled for this partner.
+                productionAccess:
+                  summary: Production access denied
+                  value:
+                    status: Forbidden
+                    message: Production access is not enabled.
+                sdkVersion:
+                  summary: SDK version blocked
+                  value:
+                    status: Forbidden
+                    message: SDK version not allowed.
+                userIdMismatch:
+                  summary: Body and header user ids disagree
+                  value:
+                    status: Forbidden
+                    message: Token is not authorized for this user ID.
+        '404':
+          description: >-
+            Not Found — `search_existing_user` was set but no matching enrollee or usable prior
+            record was found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                noEnrollee:
+                  summary: No enrolled user found for this partner
+                  value:
+                    status: Not Found
+                    message: No enrolled user found for this partner.
+                noUsablePriorRecord:
+                  summary: No usable prior KYC record
+                  value:
+                    status: Not Found
+                    message: No prior KYC record with a usable name and country was found for this user.
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '429':
+          description: Too Many Requests — rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: Rate limit exceeded. Please try again later.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
   /v3/authentication:
     post:
       summary: Submit biometric authentication
@@ -1488,7 +1703,6 @@ paths:
                           people:
                             - name: Gbenga Afolabi
                               addresses: []
-                              adverse_media: []
                               aliases: []
                               associations: []
                               dates_of_birth: []
@@ -1509,12 +1723,12 @@ paths:
                           consent: {}
                           antifraud: null
                           device_signals: null
-                      attention_adverse_media:
-                        summary: 1017 — adverse media only
+                      attention_news_media:
+                        summary: 1017 — news media only
                         value:
                           status: attention
-                          message: 'Screening completed: adverse media identified only.'
-                          reason: adverse_media_match
+                          message: 'Screening completed: news media identified only.'
+                          reason: news_media_match
                           created_at: '2026-07-20T12:00:00.000Z'
                           completed_at: '2026-07-20T12:00:01.000Z'
                           product: one_time_aml
@@ -1525,8 +1739,10 @@ paths:
                           people:
                             - name: Bukola Oni
                               addresses: []
-                              adverse_media:
-                                - title: Local business dispute reported in the press
+                              news_summary:
+                                - news_category: financial_crime
+                                  news_category_label: Financial Crime
+                                  number_of_articles: 3
                               aliases: []
                               associations: []
                               dates_of_birth: []
@@ -1776,7 +1992,6 @@ paths:
                     people:
                       - name: Gbenga Afolabi
                         addresses: []
-                        adverse_media: []
                         aliases: []
                         associations: []
                         dates_of_birth: []
@@ -1797,12 +2012,12 @@ paths:
                     consent: {}
                     antifraud: null
                     device_signals: null
-                attention_adverse_media:
-                  summary: 1017 — adverse media identified only
+                attention_news_media:
+                  summary: 1017 — news media identified only
                   value:
                     status: attention
-                    message: 'Screening completed: adverse media identified only.'
-                    reason: adverse_media_match
+                    message: 'Screening completed: news media identified only.'
+                    reason: news_media_match
                     created_at: '2026-07-20T12:00:00.000Z'
                     completed_at: '2026-07-20T12:00:01.000Z'
                     product: one_time_aml
@@ -1813,8 +2028,10 @@ paths:
                     people:
                       - name: Bukola Oni
                         addresses: []
-                        adverse_media:
-                          - title: Local business dispute reported in the press
+                        news_summary:
+                          - news_category: financial_crime
+                            news_category_label: Financial Crime
+                            number_of_articles: 3
                         aliases: []
                         associations: []
                         dates_of_birth: []
@@ -3086,6 +3303,214 @@ components:
   requestBodies: {}
   responses: {}
   schemas:
+    AmlMonitoringRequest:
+      type: object
+      required:
+        - countries
+        - user_details
+        - consent
+      properties:
+        countries:
+          type: array
+          minItems: 1
+          description: >-
+            ISO 3166-1 alpha-2 country codes (uppercase) to screen against. Send as a JSON-encoded
+            string in the multipart body, e.g. '["NG","GH"]'.
+          items:
+            type: string
+            minLength: 2
+            maxLength: 2
+            example: NG
+        full_name:
+          type: string
+          minLength: 1
+          description: >-
+            Full name of the individual to screen. Required unless `search_existing_user` is true,
+            in which case the name is resolved from the user's prior KYC enrollment.
+          example: Jane Doe
+        birth_year:
+          type: string
+          pattern: ^\d{4}$
+          nullable: true
+          description: Optional four-digit birth year used to narrow the screening.
+          example: '1990'
+        strict_match:
+          type: boolean
+          default: true
+          description: >-
+            When true (default) a higher match threshold is used, returning fewer, more precise
+            matches. When false a broader threshold is used.
+          example: true
+        aliases:
+          type: array
+          maxItems: 20
+          description: >-
+            Optional alternate names / spellings to screen alongside full_name. Send as a
+            JSON-encoded string in the multipart body, e.g. '["Jane A. Doe","J. Doe"]'.
+          items:
+            type: string
+            minLength: 1
+            maxLength: 256
+            example: J. Doe
+        search_existing_user:
+          type: boolean
+          description: >-
+            When set, reuses the name (and birth year) from the user's prior Biometric KYC or
+            Document Verification enrollment. Requires `user_id` (or the User-ID header), and that
+            user must be an enrollee of this partner with a prior KYC record carrying a usable name
+            and country — otherwise the request is rejected with a 404.
+          example: false
+        user_id:
+          type: string
+          description: >-
+            Partner-provided user identifier. Optional, but required in the body when
+            `search_existing_user` is true; the User-ID header and token only have to agree with it.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required:
+                - email
+            - required:
+                - phone_number
+          description: Consumer-stated PII fields for the user. Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              description: Given names of the individual.
+              example: Jane
+            last_name:
+              type: string
+              minLength: 1
+              description: Last name / surname of the individual.
+              example: Doe
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: Email address. At least one of email or phone_number is required.
+              example: jane@example.com
+            phone_number:
+              type: string
+              pattern: ^\+[1-9]\d{6,14}$
+              nullable: true
+              description: >-
+                Phone number in E.164 format (must start with +). At least one of email or
+                phone_number is required.
+              example: '+2348012345678'
+        consent:
+          $ref: '#/components/schemas/Consent'
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: >-
+            URL to receive the async result callback. Falls back to partner default if omitted. Must
+            be on the partner's allowed callback domains list. Can be provided via the token payload
+            (bound at /v3/token) instead of the request body.
+          example: https://example.com/callback
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value metadata for partner reference.
+          example:
+            order_id: ORD-12345
+        metadata:
+          type: array
+          description: Additional metadata entries.
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+    Consent:
+      type: object
+      required:
+        - granted
+        - granted_at
+        - notice_language
+        - notice_privacy_policy_url
+      properties:
+        granted:
+          type: boolean
+          enum:
+            - true
+          description: Must be true; user has granted consent.
+        granted_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when consent was granted.
+          example: '2026-03-06T12:00:00.000Z'
+        notice_language:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Z]{2}$
+          description: ISO 639-1 language code of the privacy notice shown, uppercase.
+          example: EN
+        notice_privacy_policy_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: HTTPS URL of the privacy policy notice shown to the user.
+          example: https://example.com/privacy
+    AcceptedResponse:
+      type: object
+      required:
+        - status
+        - message
+        - job_id
+        - user_id
+        - created_at
+      properties:
+        status:
+          type: string
+          enum:
+            - accepted
+          description: Acceptance status for queued verification requests.
+        message:
+          type: string
+          description: Human-readable acceptance message.
+          example: Request accepted and queued for processing.
+        job_id:
+          type: string
+          description: TypeID format verification identifier for tracking.
+          example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+        user_id:
+          type: string
+          description: TypeID format user identifier, or partner-provided user identifier.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the verification was created.
+          example: '2026-03-10T12:00:00.000Z'
+    ApiErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          description: HTTP status text.
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable error message.
+          example: Invalid request.
     BiometricAuthenticationRequest:
       type: object
       required:
@@ -3187,82 +3612,6 @@ components:
               value:
                 type: string
                 maxLength: 1000
-    Consent:
-      type: object
-      required:
-        - granted
-        - granted_at
-        - notice_language
-        - notice_privacy_policy_url
-      properties:
-        granted:
-          type: boolean
-          enum:
-            - true
-          description: Must be true; user has granted consent.
-        granted_at:
-          type: string
-          format: date-time
-          description: ISO 8601 timestamp of when consent was granted.
-          example: '2026-03-06T12:00:00.000Z'
-        notice_language:
-          type: string
-          minLength: 2
-          maxLength: 2
-          pattern: ^[A-Z]{2}$
-          description: ISO 639-1 language code of the privacy notice shown, uppercase.
-          example: EN
-        notice_privacy_policy_url:
-          type: string
-          format: uri
-          pattern: ^https://
-          description: HTTPS URL of the privacy policy notice shown to the user.
-          example: https://example.com/privacy
-    AcceptedResponse:
-      type: object
-      required:
-        - status
-        - message
-        - job_id
-        - user_id
-        - created_at
-      properties:
-        status:
-          type: string
-          enum:
-            - accepted
-          description: Acceptance status for queued verification requests.
-        message:
-          type: string
-          description: Human-readable acceptance message.
-          example: Request accepted and queued for processing.
-        job_id:
-          type: string
-          description: TypeID format verification identifier for tracking.
-          example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
-        user_id:
-          type: string
-          description: TypeID format user identifier, or partner-provided user identifier.
-          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
-        created_at:
-          type: string
-          format: date-time
-          description: ISO 8601 timestamp of when the verification was created.
-          example: '2026-03-10T12:00:00.000Z'
-    ApiErrorResponse:
-      type: object
-      required:
-        - status
-        - message
-      properties:
-        status:
-          type: string
-          description: HTTP status text.
-          example: Bad Request
-        message:
-          type: string
-          description: Human-readable error message.
-          example: Invalid request.
     BiometricEnrollmentRequest:
       type: object
       required:
@@ -4068,11 +4417,21 @@ components:
           items:
             type: object
             additionalProperties: true
-        adverse_media:
+        news_summary:
+          description: >-
+            Per-category summary of the person's news-media exposure. The raw article list the
+            provider returns under `adverse_media` is never included in the callback; a screening
+            whose only hits are news media resolves to `attention` / `news_media_match`.
           type: array
           items:
             type: object
-            additionalProperties: true
+            properties:
+              news_category:
+                type: string
+              news_category_label:
+                type: string
+              number_of_articles:
+                type: integer
         aliases:
           type: array
           items:
@@ -4155,7 +4514,7 @@ components:
           enum:
             - null
             - aml_match_found
-            - adverse_media_match
+            - news_media_match
             - service_unavailable
             - high_risk
         created_at:

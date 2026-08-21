@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [v3.845.0] - 2026-08-21
+
+### Changed
+- Updated `openapi`
+- Updated `v3-aml-monitoring-entry`
+- Updated `v3-one-time-aml-entry`
+
+
 ## [v3.837.0] - 2026-08-20
 
 ### Changed
