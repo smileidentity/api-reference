@@ -7,6 +7,7 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 <!-- SPEC_TABLE_START -->
 | Spec | Endpoint | Description |
 |------|----------|-------------|
+| [Aml Monitoring](specs/v3/v3-aml-monitoring-entry.yaml) | `POST /v3/aml/monitoring` | Submit AML Monitoring screening |
 | [Biometric Authentication](specs/v3/v3-biometric-authentication-entry.yaml) | `POST /v3/authentication` | Submit biometric authentication |
 | [Biometric Enrollment](specs/v3/v3-biometric-enrollment-entry.yaml) | `POST /v3/registration` | Submit biometric enrollment |
 | [Biometric KYC](specs/v3/v3-biometric-kyc-entry.yaml) | `POST /v3/biometric_kyc` | Submit Biometric KYC verification |

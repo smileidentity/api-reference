@@ -340,7 +340,6 @@ paths:
                           people:
                             - name: Gbenga Afolabi
                               addresses: []
-                              adverse_media: []
                               aliases: []
                               associations: []
                               dates_of_birth: []
@@ -361,12 +360,12 @@ paths:
                           consent: {}
                           antifraud: null
                           device_signals: null
-                      attention_adverse_media:
-                        summary: '1017 — adverse media only'
+                      attention_news_media:
+                        summary: '1017 — news media only'
                         value:
                           status: attention
-                          message: 'Screening completed: adverse media identified only.'
-                          reason: adverse_media_match
+                          message: 'Screening completed: news media identified only.'
+                          reason: news_media_match
                           created_at: '2026-07-20T12:00:00.000Z'
                           completed_at: '2026-07-20T12:00:01.000Z'
                           product: one_time_aml
@@ -377,8 +376,10 @@ paths:
                           people:
                             - name: Bukola Oni
                               addresses: []
-                              adverse_media:
-                                - title: Local business dispute reported in the press
+                              news_summary:
+                                - news_category: financial_crime
+                                  news_category_label: Financial Crime
+                                  number_of_articles: 3
                               aliases: []
                               associations: []
                               dates_of_birth: []
@@ -639,7 +640,6 @@ paths:
                     people:
                       - name: Gbenga Afolabi
                         addresses: []
-                        adverse_media: []
                         aliases: []
                         associations: []
                         dates_of_birth: []
@@ -660,12 +660,12 @@ paths:
                     consent: {}
                     antifraud: null
                     device_signals: null
-                attention_adverse_media:
-                  summary: '1017 — adverse media identified only'
+                attention_news_media:
+                  summary: '1017 — news media identified only'
                   value:
                     status: attention
-                    message: 'Screening completed: adverse media identified only.'
-                    reason: adverse_media_match
+                    message: 'Screening completed: news media identified only.'
+                    reason: news_media_match
                     created_at: '2026-07-20T12:00:00.000Z'
                     completed_at: '2026-07-20T12:00:01.000Z'
                     product: one_time_aml
@@ -676,8 +676,10 @@ paths:
                     people:
                       - name: Bukola Oni
                         addresses: []
-                        adverse_media:
-                          - title: Local business dispute reported in the press
+                        news_summary:
+                          - news_category: financial_crime
+                            news_category_label: Financial Crime
+                            number_of_articles: 3
                         aliases: []
                         associations: []
                         dates_of_birth: []
@@ -1094,11 +1096,22 @@ components:
           items:
             type: object
             additionalProperties: true
-        adverse_media:
+        news_summary:
+          description: >-
+            Per-category summary of the person's news-media exposure. The raw
+            article list the provider returns under `adverse_media` is never
+            included in the callback; a screening whose only hits are news media
+            resolves to `attention` / `news_media_match`.
           type: array
           items:
             type: object
-            additionalProperties: true
+            properties:
+              news_category:
+                type: string
+              news_category_label:
+                type: string
+              number_of_articles:
+                type: integer
         aliases:
           type: array
           items:
@@ -1176,7 +1189,7 @@ components:
           nullable: true
           description: >-
             Canonical machine-readable reason. `null` for a clear outcome.
-          enum: [null, aml_match_found, adverse_media_match, service_unavailable, high_risk]
+          enum: [null, aml_match_found, news_media_match, service_unavailable, high_risk]
         created_at:
           type: string
           format: date-time
