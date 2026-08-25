@@ -225,6 +225,319 @@ paths:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
 
+  /v3/enhanced_kyc/sync:
+    post:
+      operationId: submitEnhancedKycSync
+      tags:
+        - Enhanced KYC
+      security:
+        - SmileIDToken: []
+      summary: Submit Enhanced KYC verification synchronously
+      description: >-
+        Runs the same Enhanced KYC verification as POST /v3/enhanced_kyc and returns the result in
+        the response instead of delivering it to a callback URL.
+
+        The response body is the same payload that would have been POSTed to your webhook, and it
+        carries the same Response-Signature and Response-Timestamp headers — so existing webhook
+        verification code works against this response unchanged. No webhook is sent, and
+        callback_url is optional and ignored.
+
+        The request body, headers and validation are otherwise identical to the async endpoint, and
+        the job is billed once, exactly as an async job is.
+
+        Because a caller is waiting, this endpoint does not retry internally the way the async one
+        does. A verification that could not be completed is reported with a REST status code rather
+        than a 200 carrying an error status: 424 when the ID authority answered that it was
+        unavailable, 408 when it did not answer inside the request deadline, 500 on an internal
+        failure. In all three the job is recorded and its id is returned in SmileID-Job-ID — read
+        the outcome from GET /v3/status/{jobId} rather than resubmitting, which would run and bill
+        a second lookup.
+      parameters:
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: 'android'
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: '10.4.2'
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
+            Required when your Smile ID account is configured to use SDK/partner secret HMAC
+            authentication.
+          schema:
+            type: string
+            format: date-time
+            example: '2026-03-10T12:00:00.000Z'
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret
+            and the value of SmileID-Timestamp as salt. Required when your Smile ID
+            account is configured to use SDK/partner secret HMAC authentication.
+          schema:
+            type: string
+            example: '4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2'
+        - name: User-ID
+          in: header
+          required: false
+          description: >-
+            Partner-provided user identifier. If omitted, a TypeID is generated automatically.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EnhancedKycRequest'
+      responses:
+        '200':
+          description: >-
+            Completed — the body is the verification result, identical to the webhook payload for
+            this job. Its fields are documented with the Enhanced KYC callback rather than
+            duplicated here, so the two cannot describe different things.
+          headers:
+            Response-Signature:
+              description: Signature over the response, verifiable exactly as a webhook signature is.
+              schema:
+                type: string
+            Response-Timestamp:
+              description: Timestamp the signature was computed against.
+              schema:
+                type: string
+                format: date-time
+            SmileID-Job-ID:
+              description: Public Smile job id for this verification.
+              schema:
+                type: string
+            User-ID:
+              description: Partner-facing user id for this verification.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+              example:
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                status: clear
+                message: Verified
+                kyc_receipt: https://portal.usesmileid.com/api/v3/001/job_result_summary/job_01h8x9y2z3a4b5c6d7e8f9g0h1/generate_v3_pdf/live?token=REDACTED
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingCountry:
+                  summary: Missing or invalid country
+                  value:
+                    status: Bad Request
+                    message: "Required field 'country' is missing or invalid."
+                missingUserDetails:
+                  summary: Missing or invalid user_details
+                  value:
+                    status: Bad Request
+                    message: "Required field 'user_details' is missing or invalid."
+                missingConsent:
+                  summary: Missing consent block
+                  value:
+                    status: Bad Request
+                    message: consent is required
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+                invalidIdFormat:
+                  summary: id_number does not match the format for this country and ID type
+                  value:
+                    status: Bad Request
+                    message: "Required field 'id_number' is missing or invalid."
+        '401':
+          description: >-
+            Unauthorized — missing, malformed or rejected token. Produced by the API Gateway
+            authorizer before the request reaches the endpoint, so it uses the gateway envelope
+            rather than the endpoint's own error shape. Covers ACCESS_DENIED,
+            MISSING_AUTHENTICATION_TOKEN and UNAUTHORIZED alike.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewayErrorResponse'
+              example:
+                job_id: null
+                message: Missing or invalid authentication credentials.
+                status: unauthorized
+                user_id: null
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: You are out of credits. Add funds to your wallet to run more verifications.
+        '403':
+          description: >-
+            Forbidden — product or ID type not enabled, IP not allowlisted, production access not
+            granted, or a user id conflict between body, header and token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                productNotEnabled:
+                  summary: Enhanced KYC not enabled for this partner
+                  value:
+                    status: Forbidden
+                    message: This feature requires you to activate ID Validation for your Smile ID account.
+                ipNotAllowed:
+                  summary: Caller IP not on the partner allowlist
+                  value:
+                    status: Forbidden
+                    message: You are not authorized to do that.
+                productionAccess:
+                  summary: Production access not granted
+                  value:
+                    status: Forbidden
+                    message: Production is not enabled for this account. Please complete your KYC with Smile Identity.
+        '408':
+          description: >-
+            Request Timeout — the ID authority did not answer within the request deadline, so no
+            verification was produced. The job is recorded: read its outcome from
+            GET /v3/status/{jobId} using the SmileID-Job-ID header rather than resubmitting.
+          headers:
+            SmileID-Job-ID:
+              description: The Smile job id to poll for this verification.
+              schema:
+                type: string
+                example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Request Timeout
+                message: >-
+                  The ID authority did not respond in time. The job is still recorded —
+                  retrieve its result from /v3/status/{job_id}.
+        '413':
+          description: >-
+            Content Too Large — the request exceeded API Gateway's 10 MB payload limit, so it was
+            rejected before reaching the endpoint. Gateway envelope, as with 401.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewayErrorResponse'
+              example:
+                job_id: null
+                message: Request payload too large. Maximum allowed size is 10 MB.
+                status: payload_too_large
+                user_id: null
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '424':
+          description: >-
+            Failed Dependency — the ID authority answered that it was unavailable, so no
+            verification was performed. The message is the one the webhook would have carried.
+            The job is recorded; read its outcome from GET /v3/status/{jobId} rather than
+            resubmitting.
+          headers:
+            SmileID-Job-ID:
+              description: The Smile job id to poll for this verification.
+              schema:
+                type: string
+                example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Failed Dependency
+                message: Unable to verify ID — ID authority unavailable.
+        '429':
+          description: Too Many Requests — rate limit exceeded for this ID number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: >-
+                  This ID number has been blocked due to multiple submissions. Please use the
+                  designated endpoint to reactivate it.
+        '500':
+          description: >-
+            Internal Server Error. A verification that could not be completed for an internal
+            reason is reported here rather than as a 200 carrying an error status. As with a 408,
+            the job exists and its outcome can be read from GET /v3/status/{jobId}.
+
+            Two shapes are possible. The endpoint's own body is returned when processing failed
+            after the request was accepted. If API Gateway could not get a usable response from
+            the function at all (crash, out-of-memory, throttling), it substitutes the gateway
+            envelope instead and no SmileID-Job-ID is present.
+          headers:
+            SmileID-Job-ID:
+              description: >-
+                The Smile job id to poll for this verification. Present when the failure happened
+                after the job was created.
+              schema:
+                type: string
+                example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+          content:
+            application/json:
+              schema:
+                # anyOf, not oneOf: the two shapes overlap by design — a gateway body is a valid
+                # ApiErrorResponse with two extra null fields — so "exactly one" can never hold.
+                # The intent is "either of these may arrive", which is what anyOf states.
+                anyOf:
+                  - $ref: '#/components/schemas/ApiErrorResponse'
+                  - $ref: '#/components/schemas/GatewayErrorResponse'
+              examples:
+                endpointFailure:
+                  summary: Processing failed after the request was accepted
+                  value:
+                    status: Internal Server Error
+                    message: An unexpected error occurred. Please try again or contact support.
+                integrationFailure:
+                  summary: API Gateway could not invoke or read the function
+                  value:
+                    job_id: null
+                    message: Backend processing failure. Please retry; contact support if the issue persists.
+                    status: integration_failure
+                    user_id: null
+        '504':
+          description: >-
+            Gateway Timeout — the request exceeded API Gateway's integration timeout, so it was
+            terminated with an AWS-generated body rather than one of ours. The endpoint bounds its
+            own work to return a 408 before this can happen; a 504 means that bound was exceeded.
+            Treat it like a 408: the job may exist, so poll GET /v3/status/{jobId} rather than
+            resubmitting.
+
 components:
   securitySchemes:
     SmileIDToken:
@@ -401,6 +714,33 @@ components:
           description: ISO 8601 timestamp of when the verification was created.
           example: '2026-03-10T12:00:00.000Z'
 
+    GatewayErrorResponse:
+      type: object
+      description: >-
+        Error envelope produced by API Gateway itself, for requests rejected before they reach the
+        endpoint (authorization, payload limit) or where the function could not be invoked. Carries
+        two always-null fields that the endpoint's own errors omit, so parsers should treat
+        `status` and `message` as the only reliable keys.
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          description: Machine-readable status slug, lower_snake_case.
+          example: unauthorized
+        message:
+          type: string
+          description: Human-readable error message.
+          example: Missing or invalid authentication credentials.
+        job_id:
+          type: string
+          nullable: true
+          description: Always null — no job exists for a request rejected at this layer.
+        user_id:
+          type: string
+          nullable: true
+          description: Always null — no job exists for a request rejected at this layer.
     ApiErrorResponse:
       type: object
       required:

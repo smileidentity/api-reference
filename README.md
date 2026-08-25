@@ -15,6 +15,7 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 | [Document Verification](specs/v3/v3-document-verification-entry.yaml) | `POST /v3/document_verification` | Submit Document Verification |
 | [Enhanced Document Verification](specs/v3/v3-enhanced-document-verification-entry.yaml) | `POST /v3/enhanced_document_verification` | Submit Enhanced Document Verification |
 | [Enhanced KYC](specs/v3/v3-enhanced-kyc-entry.yaml) | `POST /v3/enhanced_kyc` | Submit Enhanced KYC verification |
+| [Enhanced KYC](specs/v3/v3-enhanced-kyc-entry.yaml) | `POST /v3/enhanced_kyc/sync` | Submit Enhanced KYC verification synchronously |
 | [One Time Aml](specs/v3/v3-one-time-aml-entry.yaml) | `POST /v3/aml` | Submit One-Time AML screening |
 | [One Time Aml](specs/v3/v3-one-time-aml-entry.yaml) | `POST /v3/aml/sync` | Submit One-Time AML screening and receive the result inline |
 | [Replay Callback](specs/v3/v3-replay-callback.yaml) | `POST /v3/replay/{job_id}` | Replay a callback for a completed verification |
