@@ -26,6 +26,7 @@ tags:
   - name: One-Time AML
   - name: Services
   - name: Smart Selfie Compare
+  - name: Smile Links
   - name: Users
   - name: Verification Status
 paths:
@@ -3464,6 +3465,244 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
+  /v3/smile_links:
+    post:
+      operationId: createSmileLink
+      tags:
+        - Smile Links
+      summary: Create a Smile Link
+      description: |
+        Creates a Smile Link synchronously and returns a creation
+        acknowledgment with the link's id (`ref_id`) and the URL to hand to
+        the end user. The full link resource is available from
+        `GET /v3/smile_links/{refId}`.
+      security:
+        - SmileIDToken: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - id_types
+                - name
+                - notice_privacy_policy_url
+                - is_single_use
+              properties:
+                id_types:
+                  type: array
+                  minItems: 1
+                  description: JSON-encoded array of verification configurations.
+                  items:
+                    $ref: '#/components/schemas/SmileLinkIdType'
+                name:
+                  type: string
+                  example: Onboarding
+                notice_privacy_policy_url:
+                  type: string
+                  example: https://partner.example/privacy
+                is_single_use:
+                  type: boolean
+                callback_url:
+                  type: string
+                  description: Defaults to the partner's configured callback when omitted.
+                description:
+                  type: string
+                expires_at:
+                  type: string
+                  format: date-time
+                  description: Defaults to 90 days from creation for single-use links.
+                logo_url:
+                  type: string
+                redirect_url:
+                  type: string
+                theme_color:
+                  type: string
+                partner_params:
+                  type: object
+                  description: JSON-encoded key-value pairs echoed on job results.
+                user_id:
+                  type: string
+                  description: |
+                    Unique user id for a single-use link's job. Generated
+                    (`user_` TypeID) when omitted. Must not already be in use
+                    by another link.
+            encoding:
+              id_types:
+                contentType: application/json
+              partner_params:
+                contentType: application/json
+            examples:
+              multiUse:
+                summary: Reusable link
+                value:
+                  id_types:
+                    - country: NG
+                      id_type: NIN
+                      verification_method: enhanced_kyc
+                  name: Onboarding
+                  notice_privacy_policy_url: https://partner.example/privacy
+                  is_single_use: false
+              singleUse:
+                summary: Single-use link for one person
+                value:
+                  id_types:
+                    - country: NG
+                      id_type: NIN
+                      verification_method: biometric_kyc
+                  name: KYC for Ada
+                  notice_privacy_policy_url: https://partner.example/privacy
+                  is_single_use: true
+                  user_id: user-123
+      responses:
+        '201':
+          description: |
+            Link created. The body is a creation acknowledgment — a superset of
+            the legacy v2 create body's `link`/`ref_id` keys. Fetch the full
+            link resource via `GET /v3/smile_links/{refId}`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmileLinkCreated'
+        '400':
+          description: |
+            Validation error. Possible causes:
+            - A required field (`id_types`, `name`, `notice_privacy_policy_url`,
+              `is_single_use`) is missing or invalid.
+            - An id_type/verification_method is not supported or not enabled
+              on the account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingName:
+                  summary: Missing required field
+                  value:
+                    message: Required field 'name' is missing or invalid.
+                    status: Bad Request
+        '401':
+          description: Authentication failed (missing, invalid, or product-scoped token).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: Missing or invalid authentication credentials.
+                status: Unauthorized
+        '403':
+          description: |
+            Access denied. Possible causes:
+            - Production is not enabled for the account.
+            - IP address is on the blocklist or not in the partner's allowlist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: You are not allowed to do that.
+                status: Forbidden
+        '409':
+          description: The provided `user_id` is already in use by another link.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: User ID is taken. Please provide a unique ID.
+                status: Conflict
+        '415':
+          description: |
+            Wrong or missing `Content-Type` header. The request body must be
+            sent as `multipart/form-data`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+                status: Unsupported Media Type
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: An error occurred while generating the link. Please try again!
+                status: Internal Server Error
+  /v3/smile_links/{refId}:
+    get:
+      operationId: getSmileLink
+      tags:
+        - Smile Links
+      summary: Fetch a Smile Link
+      description: |
+        Returns the link resource for a link id.
+      security:
+        - SmileIDToken: []
+      parameters:
+        - name: refId
+          in: path
+          required: true
+          description: The link's id, returned as `ref_id` at creation.
+          schema:
+            type: string
+            format: uuid
+          example: 65983864-e8c6-4d09-890a-2e5f88fc50f6
+      responses:
+        '200':
+          description: The link resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmileLinkResource'
+        '400':
+          description: '`refId` is not a valid link id (uuid).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: refId must be a valid link id
+                status: Bad Request
+        '401':
+          description: Authentication failed (missing, invalid, or product-scoped token).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: Missing or invalid authentication credentials.
+                status: Unauthorized
+        '403':
+          description: The request IP is not in the partner's allowlist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: You are not allowed to do that.
+                status: Forbidden
+        '404':
+          description: No link with this `refId` exists for the authenticated partner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: Link not found
+                status: Not Found
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: System Error
+                status: Internal Server Error
   /v3/token:
     post:
       operationId: getV3Token
@@ -5600,6 +5839,110 @@ components:
               value:
                 type: string
                 maxLength: 1000
+    SmileLinkIdType:
+      type: object
+      required:
+        - country
+        - id_type
+        - verification_method
+      properties:
+        country:
+          type: string
+          description: ISO 3166-1 alpha-2 country code.
+          example: NG
+        id_type:
+          type: string
+          description: The ID type to verify.
+          example: NIN
+        verification_method:
+          type: string
+          description: The verification product to run for this ID type.
+          example: enhanced_kyc
+      additionalProperties: false
+    SmileLinkResource:
+      type: object
+      required:
+        - ref_id
+        - link
+        - name
+      properties:
+        ref_id:
+          type: string
+          format: uuid
+          description: The link's id — the reference used on all v3 smile_links routes.
+          example: 65983864-e8c6-4d09-890a-2e5f88fc50f6
+        link:
+          type: string
+          description: The URL to hand to the end user.
+          example: https://links.usesmileid.com/v3/2/65983864-e8c6-4d09-890a-2e5f88fc50f6
+        name:
+          type: string
+          example: Onboarding
+        description:
+          type: string
+          nullable: true
+        id_types:
+          type: array
+          items:
+            $ref: '#/components/schemas/SmileLinkIdType'
+        is_single_use:
+          type: boolean
+        callback_url:
+          type: string
+          description: Where job results for this link are delivered.
+        notice_privacy_policy_url:
+          type: string
+        logo_url:
+          type: string
+        redirect_url:
+          type: string
+          nullable: true
+        theme_color:
+          type: string
+          example: '#000'
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        partner_params:
+          type: object
+          nullable: true
+        user_id:
+          type: string
+          nullable: true
+          description: |
+            The user id a single-use link's job runs under (generated when not
+            provided). Null on multi-use links — each opener gets its own user
+            id at link-open.
+      additionalProperties: true
+    SmileLinkCreated:
+      type: object
+      required:
+        - link
+        - message
+        - ref_id
+        - user_id
+      properties:
+        link:
+          type: string
+          description: The URL to hand to the end user.
+          example: https://links.usesmileid.com/v3/2/65983864-e8c6-4d09-890a-2e5f88fc50f6
+        message:
+          type: string
+          example: Smile Link created
+        ref_id:
+          type: string
+          format: uuid
+          description: The link's id — the reference used on all v3 smile_links routes.
+          example: 65983864-e8c6-4d09-890a-2e5f88fc50f6
+        user_id:
+          type: string
+          nullable: true
+          description: |
+            The user id a single-use link's job runs under (generated when not
+            provided). Null on multi-use links — each opener gets its own user
+            id at link-open.
+      additionalProperties: false
     JobStatusResponse:
       type: object
       required:

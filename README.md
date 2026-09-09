@@ -25,6 +25,8 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/supported_documents` | List supported documents for verification |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/supported_id_types` | List supported KYC ID types |
 | [Smart Selfie Compare](specs/v3/v3-smart-selfie-compare-entry.yaml) | `POST /v3/compare` | Submit smart selfie compare |
+| [Smile Links](specs/v3/v3-smile-links.yaml) | `POST /v3/smile_links` | Create a Smile Link |
+| [Smile Links](specs/v3/v3-smile-links.yaml) | `GET /v3/smile_links/{refId}` | Fetch a Smile Link |
 | [Token](specs/v3/v3-token.yaml) | `POST /v3/token` | Generate v3 Auth Token |
 | [Verification Status](specs/v3/v3-verification-status.yaml) | `GET /v3/status/{jobId}` | Get verification status |
 <!-- SPEC_TABLE_END -->
