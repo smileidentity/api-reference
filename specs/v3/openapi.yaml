@@ -39,62 +39,12 @@ paths:
         - SmileIDToken: []
       summary: Submit AML Monitoring screening
       description: >-
-        Submits an AML Monitoring screening request and processes it asynchronously against global
-        watchlists, enrolling the entity for ongoing monitoring. Results are delivered via callback
-        URL.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
-            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
-        - name: User-ID
-          in: header
-          required: false
-          description: >-
-            Partner-provided user identifier. If omitted, a TypeID is generated automatically. Must
-            agree with body `user_id` and any token-bound user id — disagreement is a 403. When
-            `search_existing_user` is true, the body `user_id` is required.
-          schema:
-            type: string
+        Submits an AML Monitoring screening request and processes it asynchronously against global watchlists, enrolling the entity for ongoing monitoring. Results are delivered via callback URL.
+      parameters: []
       requestBody:
         required: true
         description: >-
-          multipart/form-data. Array fields (`countries`, `aliases`) must be sent as a single
-          JSON-encoded string (e.g. `countries='["NG","GH"]'`), not as repeated form fields —
-          multipart has no array encoding and a repeated field is overwritten, which fails
-          validation.
+          multipart/form-data. Array fields (`countries`, `aliases`) must be sent as a single JSON-encoded string (e.g. `countries='["NG","GH"]'`), not as repeated form fields — multipart has no array encoding and a repeated field is overwritten, which fails validation.
         content:
           multipart/form-data:
             schema:
@@ -134,8 +84,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      Required field 'user_id' is missing or invalid when search_existing_user is
-                      true.
+                      Required field 'user_id' is missing or invalid when search_existing_user is true.
                 invalidBirthYear:
                   summary: birth_year is not a four digit year
                   value:
@@ -151,8 +100,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      A valid callback_url is required in the request or a default callback URL must
-                      be configured in the portal.
+                      A valid callback_url is required in the request or a default callback URL must be configured in the portal.
         '401':
           description: Unauthorized — invalid or missing authentication credentials.
           content:
@@ -200,8 +148,7 @@ paths:
                     message: Token is not authorized for this user ID.
         '404':
           description: >-
-            Not Found — `search_existing_user` was set but no matching enrollee or usable prior
-            record was found.
+            Not Found — `search_existing_user` was set but no matching enrollee or usable prior record was found.
           content:
             application/json:
               schema:
@@ -332,8 +279,7 @@ paths:
           required: false
           x-smile-sdk-exclude: true
           description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
           schema:
             type: string
             format: date-time
@@ -343,9 +289,7 @@ paths:
           required: false
           x-smile-sdk-exclude: true
           description: >-
-            HMAC signature of the raw HTTP request payload, computed with your SDK/partner secret
-            and the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
+            HMAC signature of the raw HTTP request payload, computed with your SDK/partner secret and the value of SmileID-Timestamp as salt. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
           schema:
             type: string
             example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
@@ -390,11 +334,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      news_category must be one of: arms_trafficking, credit_update,
-                      environmental_crime, financial_crime, human_rights_violation,
-                      leadership_change, legal_risk, location_change, narcotics, other, other_crime,
-                      ownership_change, product_change, regulatory, sexual_crime, technology_event,
-                      terrorism, violent_crime
+                      news_category must be one of: arms_trafficking, credit_update, environmental_crime, financial_crime, human_rights_violation, leadership_change, legal_risk, location_change, narcotics, other, other_crime, ownership_change, product_change, regulatory, sexual_crime, technology_event, terrorism, violent_crime
         '401':
           description: Unauthorized — invalid or missing authentication credentials.
           content:
@@ -466,49 +406,10 @@ paths:
       security:
         - SmileIDToken: []
       description: >-
-        Authenticates a user by comparing a submitted selfie against their enrolled image. The
-        selfie and liveness images are uploaded, validated at entry, then queued for async ML
-        processing (passive liveness, active liveness, face matching). Results are delivered via
-        callback URL.
+        Authenticates a user by comparing a submitted selfie against their enrolled image. The selfie and liveness images are uploaded, validated at entry, then queued for async ML processing (passive liveness, active liveness, face matching). Results are delivered via callback URL.
 
-        Supports `use_enrolled_image: true` to skip selfie/liveness upload and re-use the enrolled
-        image for the comparison (useful for server-side re-verification).
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
-          schema:
-            type: string
-            format: date-time
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: HMAC signature of the raw HTTP request body.
-          schema:
-            type: string
-        - name: User-ID
-          in: header
-          required: false
-          description: Partner-provided user identifier override.
-          schema:
-            type: string
+        Supports `use_enrolled_image: true` to skip selfie/liveness upload and re-use the enrolled image for the comparison (useful for server-side re-verification).
+      parameters: []
       requestBody:
         required: true
         content:
@@ -545,8 +446,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      A valid callback_url is required in the request or a default callback URL must
-                      be configured in the portal.
+                      A valid callback_url is required in the request or a default callback URL must be configured in the portal.
                 missingUserId:
                   summary: Missing user_id
                   value:
@@ -602,52 +502,8 @@ paths:
       security:
         - SmileIDToken: []
       description: >-
-        Enrolls a user's biometric selfie for future authentication. The selfie and liveness images
-        are uploaded, validated at entry, then processed asynchronously (passive liveness, active
-        liveness). Results are delivered via callback URL.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
-            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
-        - name: User-ID
-          in: header
-          required: false
-          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-          schema:
-            type: string
+        Enrolls a user's biometric selfie for future authentication. The selfie and liveness images are uploaded, validated at entry, then processed asynchronously (passive liveness, active liveness). Results are delivered via callback URL.
+      parameters: []
       requestBody:
         required: true
         content:
@@ -689,8 +545,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      A valid callback_url is required in the request or a default callback URL must
-                      be configured in the portal.
+                      A valid callback_url is required in the request or a default callback URL must be configured in the portal.
                 missingContact:
                   summary: Missing email and phone
                   value:
@@ -786,61 +641,8 @@ paths:
       security:
         - SmileIDToken: []
       description: >-
-        Combines biometric selfie verification with KYC identity checks against the relevant ID
-        authority. The selfie and liveness images are uploaded alongside identity details (country,
-        id_type, id_number), validated at entry, then processed asynchronously. Results are
-        delivered via callback URL.
-      parameters:
-        - name: SmileID-Partner-ID
-          in: header
-          required: true
-          description: Partner identifier (numeric, 3+ digits).
-          schema:
-            type: string
-            pattern: ^\d{3,}$
-            example: '1234'
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
-            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
-        - name: User-ID
-          in: header
-          required: false
-          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-          schema:
-            type: string
+        Combines biometric selfie verification with KYC identity checks against the relevant ID authority. The selfie and liveness images are uploaded alongside identity details (country, id_type, id_number), validated at entry, then processed asynchronously. Results are delivered via callback URL.
+      parameters: []
       requestBody:
         required: true
         content:
@@ -882,8 +684,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      A valid callback_url is required in the request or a default callback URL must
-                      be configured in the portal.
+                      A valid callback_url is required in the request or a default callback URL must be configured in the portal.
                 missingCountry:
                   summary: Missing required field
                   value:
@@ -994,61 +795,8 @@ paths:
       security:
         - SmileIDToken: []
       description: >-
-        Verifies a user's identity by comparing a selfie against a document image. The selfie and
-        liveness images are uploaded alongside a document photo (front, and optionally back). The
-        id_type is optional — the document type is auto-classified if not provided. Results are
-        delivered asynchronously via callback URL.
-      parameters:
-        - name: SmileID-Partner-ID
-          in: header
-          required: true
-          description: Partner identifier (numeric, 3+ digits).
-          schema:
-            type: string
-            pattern: ^\d{3,}$
-            example: '1234'
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
-            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
-        - name: User-ID
-          in: header
-          required: false
-          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-          schema:
-            type: string
+        Verifies a user's identity by comparing a selfie against a document image. The selfie and liveness images are uploaded alongside a document photo (front, and optionally back). The id_type is optional — the document type is auto-classified if not provided. Results are delivered asynchronously via callback URL.
+      parameters: []
       requestBody:
         required: true
         content:
@@ -1099,8 +847,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      A valid callback_url is required in the request or a default callback URL must
-                      be configured in the portal.
+                      A valid callback_url is required in the request or a default callback URL must be configured in the portal.
                 missingCountry:
                   summary: Missing required field
                   value:
@@ -1206,61 +953,8 @@ paths:
       security:
         - SmileIDToken: []
       description: >-
-        Verifies a user's identity by comparing a selfie against a document image and
-        cross-referencing extracted data for additional verification. The selfie and liveness images
-        are uploaded alongside a document photo (front, and optionally back). The id_type is
-        required for this endpoint. Results are delivered asynchronously via callback URL.
-      parameters:
-        - name: SmileID-Partner-ID
-          in: header
-          required: true
-          description: Partner identifier (numeric, 3+ digits).
-          schema:
-            type: string
-            pattern: ^\d{3,}$
-            example: '1234'
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
-            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
-        - name: User-ID
-          in: header
-          required: false
-          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-          schema:
-            type: string
+        Verifies a user's identity by comparing a selfie against a document image and cross-referencing extracted data for additional verification. The selfie and liveness images are uploaded alongside a document photo (front, and optionally back). The id_type is required for this endpoint. Results are delivered asynchronously via callback URL.
+      parameters: []
       requestBody:
         required: true
         content:
@@ -1316,8 +1010,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      A valid callback_url is required in the request or a default callback URL must
-                      be configured in the portal.
+                      A valid callback_url is required in the request or a default callback URL must be configured in the portal.
                 missingCountry:
                   summary: Missing required field
                   value:
@@ -1428,51 +1121,8 @@ paths:
         - SmileIDToken: []
       summary: Submit Enhanced KYC verification
       description: >-
-        Allows submission of Enhanced KYC verification requests and processes the verification
-        asynchronously against the relevant ID authority. Results are delivered via callback URL.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
-            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
-        - name: User-ID
-          in: header
-          required: false
-          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-          schema:
-            type: string
+        Allows submission of Enhanced KYC verification requests and processes the verification asynchronously against the relevant ID authority. Results are delivered via callback URL.
+      parameters: []
       requestBody:
         required: true
         content:
@@ -1509,8 +1159,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      A valid callback_url is required in the request or a default callback URL must
-                      be configured in the portal.
+                      A valid callback_url is required in the request or a default callback URL must be configured in the portal.
                 missingContact:
                   summary: Missing email and phone
                   value:
@@ -1621,67 +1270,14 @@ paths:
         - SmileIDToken: []
       summary: Submit Enhanced KYC verification synchronously
       description: >-
-        Runs the same Enhanced KYC verification as POST /v3/enhanced_kyc and returns the result in
-        the response instead of delivering it to a callback URL.
+        Runs the same Enhanced KYC verification as POST /v3/enhanced_kyc and returns the result in the response instead of delivering it to a callback URL.
 
-        The response body is the same payload that would have been POSTed to your webhook, and it
-        carries the same Response-Signature and Response-Timestamp headers — so existing webhook
-        verification code works against this response unchanged. No webhook is sent, and
-        callback_url is optional and ignored.
+        The response body is the same payload that would have been POSTed to your webhook, and it carries the same Response-Signature and Response-Timestamp headers — so existing webhook verification code works against this response unchanged. No webhook is sent, and callback_url is optional and ignored.
 
-        The request body, headers and validation are otherwise identical to the async endpoint, and
-        the job is billed once, exactly as an async job is.
+        The request body, headers and validation are otherwise identical to the async endpoint, and the job is billed once, exactly as an async job is.
 
-        Because a caller is waiting, this endpoint does not retry internally the way the async one
-        does. A verification that could not be completed is reported with a REST status code rather
-        than a 200 carrying an error status: 424 when the ID authority answered that it was
-        unavailable, 408 when it did not answer inside the request deadline, 500 on an internal
-        failure. In all three the job is recorded and its id is returned in SmileID-Job-ID — read
-        the outcome from GET /v3/status/{jobId} rather than resubmitting, which would run and bill a
-        second lookup.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
-            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
-        - name: User-ID
-          in: header
-          required: false
-          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-          schema:
-            type: string
+        Because a caller is waiting, this endpoint does not retry internally the way the async one does. A verification that could not be completed is reported with a REST status code rather than a 200 carrying an error status: 424 when the ID authority answered that it was unavailable, 408 when it did not answer inside the request deadline, 500 on an internal failure. In all three the job is recorded and its id is returned in SmileID-Job-ID — read the outcome from GET /v3/status/{jobId} rather than resubmitting, which would run and bill a second lookup.
+      parameters: []
       requestBody:
         required: true
         content:
@@ -1691,9 +1287,7 @@ paths:
       responses:
         '200':
           description: >-
-            Completed — the body is the verification result, identical to the webhook payload for
-            this job. Its fields are documented with the Enhanced KYC callback rather than
-            duplicated here, so the two cannot describe different things.
+            Completed — the body is the verification result, identical to the webhook payload for this job. Its fields are documented with the Enhanced KYC callback rather than duplicated here, so the two cannot describe different things.
           headers:
             Response-Signature:
               description: Signature over the response, verifiable exactly as a webhook signature is.
@@ -1758,10 +1352,7 @@ paths:
                     message: Required field 'id_number' is missing or invalid.
         '401':
           description: >-
-            Unauthorized — missing, malformed or rejected token. Produced by the API Gateway
-            authorizer before the request reaches the endpoint, so it uses the gateway envelope
-            rather than the endpoint's own error shape. Covers ACCESS_DENIED,
-            MISSING_AUTHENTICATION_TOKEN and UNAUTHORIZED alike.
+            Unauthorized — missing, malformed or rejected token. Produced by the API Gateway authorizer before the request reaches the endpoint, so it uses the gateway envelope rather than the endpoint's own error shape. Covers ACCESS_DENIED, MISSING_AUTHENTICATION_TOKEN and UNAUTHORIZED alike.
           content:
             application/json:
               schema:
@@ -1782,8 +1373,7 @@ paths:
                 message: You are out of credits. Add funds to your wallet to run more verifications.
         '403':
           description: >-
-            Forbidden — product or ID type not enabled, IP not allowlisted, production access not
-            granted, or a user id conflict between body, header and token.
+            Forbidden — product or ID type not enabled, IP not allowlisted, production access not granted, or a user id conflict between body, header and token.
           content:
             application/json:
               schema:
@@ -1804,13 +1394,10 @@ paths:
                   value:
                     status: Forbidden
                     message: >-
-                      Production is not enabled for this account. Please complete your KYC with
-                      Smile Identity.
+                      Production is not enabled for this account. Please complete your KYC with Smile Identity.
         '408':
           description: >-
-            Request Timeout — the ID authority did not answer within the request deadline, so no
-            verification was produced. The job is recorded: read its outcome from GET
-            /v3/status/{jobId} using the SmileID-Job-ID header rather than resubmitting.
+            Request Timeout — the ID authority did not answer within the request deadline, so no verification was produced. The job is recorded: read its outcome from GET /v3/status/{jobId} using the SmileID-Job-ID header rather than resubmitting.
           headers:
             SmileID-Job-ID:
               description: The Smile job id to poll for this verification.
@@ -1824,12 +1411,10 @@ paths:
               example:
                 status: Request Timeout
                 message: >-
-                  The ID authority did not respond in time. The job is still recorded — retrieve its
-                  result from /v3/status/{job_id}.
+                  The ID authority did not respond in time. The job is still recorded — retrieve its result from /v3/status/{job_id}.
         '413':
           description: >-
-            Content Too Large — the request exceeded API Gateway's 10 MB payload limit, so it was
-            rejected before reaching the endpoint. Gateway envelope, as with 401.
+            Content Too Large — the request exceeded API Gateway's 10 MB payload limit, so it was rejected before reaching the endpoint. Gateway envelope, as with 401.
           content:
             application/json:
               schema:
@@ -1850,9 +1435,7 @@ paths:
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
         '424':
           description: >-
-            Failed Dependency — the ID authority answered that it was unavailable, so no
-            verification was performed. The message is the one the webhook would have carried. The
-            job is recorded; read its outcome from GET /v3/status/{jobId} rather than resubmitting.
+            Failed Dependency — the ID authority answered that it was unavailable, so no verification was performed. The message is the one the webhook would have carried. The job is recorded; read its outcome from GET /v3/status/{jobId} rather than resubmitting.
           headers:
             SmileID-Job-ID:
               description: The Smile job id to poll for this verification.
@@ -1875,23 +1458,16 @@ paths:
               example:
                 status: Too Many Requests
                 message: >-
-                  This ID number has been blocked due to multiple submissions. Please use the
-                  designated endpoint to reactivate it.
+                  This ID number has been blocked due to multiple submissions. Please use the designated endpoint to reactivate it.
         '500':
           description: >-
-            Internal Server Error. A verification that could not be completed for an internal reason
-            is reported here rather than as a 200 carrying an error status. As with a 408, the job
-            exists and its outcome can be read from GET /v3/status/{jobId}.
+            Internal Server Error. A verification that could not be completed for an internal reason is reported here rather than as a 200 carrying an error status. As with a 408, the job exists and its outcome can be read from GET /v3/status/{jobId}.
 
-            Two shapes are possible. The endpoint's own body is returned when processing failed
-            after the request was accepted. If API Gateway could not get a usable response from the
-            function at all (crash, out-of-memory, throttling), it substitutes the gateway envelope
-            instead and no SmileID-Job-ID is present.
+            Two shapes are possible. The endpoint's own body is returned when processing failed after the request was accepted. If API Gateway could not get a usable response from the function at all (crash, out-of-memory, throttling), it substitutes the gateway envelope instead and no SmileID-Job-ID is present.
           headers:
             SmileID-Job-ID:
               description: >-
-                The Smile job id to poll for this verification. Present when the failure happened
-                after the job was created.
+                The Smile job id to poll for this verification. Present when the failure happened after the job was created.
               schema:
                 type: string
                 example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
@@ -1912,17 +1488,12 @@ paths:
                   value:
                     job_id: null
                     message: >-
-                      Backend processing failure. Please retry; contact support if the issue
-                      persists.
+                      Backend processing failure. Please retry; contact support if the issue persists.
                     status: integration_failure
                     user_id: null
         '504':
           description: >-
-            Gateway Timeout — the request exceeded API Gateway's integration timeout, so it was
-            terminated with an AWS-generated body rather than one of ours. The endpoint bounds its
-            own work to return a 408 before this can happen; a 504 means that bound was exceeded.
-            Treat it like a 408: the job may exist, so poll GET /v3/status/{jobId} rather than
-            resubmitting.
+            Gateway Timeout — the request exceeded API Gateway's integration timeout, so it was terminated with an AWS-generated body rather than one of ours. The endpoint bounds its own work to return a 408 before this can happen; a 504 means that bound was exceeded. Treat it like a 408: the job may exist, so poll GET /v3/status/{jobId} rather than resubmitting.
   /v3/aml:
     post:
       operationId: submitOneTimeAml
@@ -1932,64 +1503,12 @@ paths:
         - SmileIDToken: []
       summary: Submit One-Time AML screening
       description: >-
-        Screens the supplied full name (and optional aliases/birth year) against sanctions, PEP, and
-        adverse-media lists for the given countries. Results are delivered asynchronously via
-        callback URL. No human review is performed — the callback carries a terminal outcome.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
-            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
-        - name: User-ID
-          in: header
-          required: false
-          description: >-
-            Partner-provided user identifier. Must agree with body `user_id` and any token-bound
-            user id — disagreement is a 403. If omitted everywhere, a TypeID is generated
-            automatically.
-          schema:
-            type: string
+        Screens the supplied full name (and optional aliases/birth year) against sanctions, PEP, and adverse-media lists for the given countries. Results are delivered asynchronously via callback URL. No human review is performed — the callback carries a terminal outcome.
+      parameters: []
       requestBody:
         required: true
         description: >-
-          Sent as multipart/form-data. Scalar fields (full_name, birth_year, strict_match,
-          search_existing_user, user_id, source_sdk, source_sdk_version) are plain form fields.
-          Non-scalar fields must be sent as JSON-encoded strings in their form part: the array
-          fields countries and aliases (e.g. countries='["NG","KE"]') and the object fields consent,
-          user_details, metadata, and partner_params. Multipart has no native array encoding, so a
-          bare or repeated countries field is rejected — it must be a JSON array string.
+          Sent as multipart/form-data. Scalar fields (full_name, birth_year, strict_match, search_existing_user, user_id, source_sdk, source_sdk_version) are plain form fields. Non-scalar fields must be sent as JSON-encoded strings in their form part: the array fields countries and aliases (e.g. countries='["NG","KE"]') and the object fields consent, user_details, metadata, and partner_params. Multipart has no native array encoding, so a bare or repeated countries field is rejected — it must be a JSON array string.
         content:
           multipart/form-data:
             schema:
@@ -2048,8 +1567,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      Required field 'user_id' is missing or invalid when search_existing_user is
-                      true.
+                      Required field 'user_id' is missing or invalid when search_existing_user is true.
                 missingConsent:
                   summary: Consent not granted
                   value:
@@ -2122,8 +1640,7 @@ paths:
                     message: SDK version not allowed.
         '404':
           description: >-
-            Not Found — `search_existing_user` was true but no matching enrollee or usable prior
-            record was found.
+            Not Found — `search_existing_user` was true but no matching enrollee or usable prior record was found.
           content:
             application/json:
               schema:
@@ -2181,9 +1698,7 @@ paths:
             post:
               summary: One-Time AML result callback
               description: >-
-                Sent once the screening reaches a terminal state (clear, block, attention, or
-                error). The same body is returned by `GET /v3/status/{jobId}`-driven polling flows
-                that reconstruct the result, and by `POST /v3/replay/{job_id}`.
+                Sent once the screening reaches a terminal state (clear, block, attention, or error). The same body is returned by `GET /v3/status/{jobId}`-driven polling flows that reconstruct the result, and by `POST /v3/replay/{job_id}`.
               requestBody:
                 required: true
                 content:
@@ -2347,100 +1862,30 @@ paths:
         - SmileIDToken: []
       summary: Submit One-Time AML screening and receive the result inline
       description: >-
-        Synchronous counterpart to `POST /v3/aml`. Runs the same One-Time AML screening (job type
-        15) and returns the terminal result in the response body instead of delivering it to a
-        callback URL, so a verification can be completed in a single request without hosting a
-        public webhook endpoint.
+        Synchronous counterpart to `POST /v3/aml`. Runs the same One-Time AML screening (job type 15) and returns the terminal result in the response body instead of delivering it to a callback URL, so a verification can be completed in a single request without hosting a public webhook endpoint.
 
-        The request body and every entry validation are identical to the async endpoint, with one
-        exception: `callback_url` is optional here. If you do supply one it is stored so `POST
-        /v3/replay/{job_id}` can use it later, but no webhook is ever sent — the result is in this
-        response.
+        The request body and every entry validation are identical to the async endpoint, with one exception: `callback_url` is optional here. If you do supply one it is stored so `POST /v3/replay/{job_id}` can use it later, but no webhook is ever sent — the result is in this response.
 
-        The 200 body is exactly the payload the async callback would have delivered, so a partner
-        can move between the two endpoints without changing how they parse a result.
+        The 200 body is exactly the payload the async callback would have delivered, so a partner can move between the two endpoints without changing how they parse a result.
 
-        The response carries `Response-Signature` and `Response-Timestamp`, computed the same way as
-        on our webhooks, so existing signature verification applies unchanged.
+        The response carries `Response-Signature` and `Response-Timestamp`, computed the same way as on our webhooks, so existing signature verification applies unchanged.
 
-        Screening is performed inline against the provider, so this endpoint is slower than the
-        async one and is bounded by a request deadline. If the provider does not answer within it,
-        the response is a 408 and no charge is made.
+        Screening is performed inline against the provider, so this endpoint is slower than the async one and is bounded by a request deadline. If the provider does not answer within it, the response is a 408 and no charge is made.
 
-        Every response returned after the job is created carries a `SmileID-Job-ID` header, and a
-        completed screening can always be read back from `GET /v3/status/{jobId}` — so if you have a
-        job id, read it rather than resubmitting. If you do not (a network failure, or the gateway
-        timing the request out on its own), resubmit with the same `SmileID-Idempotency-Key`: the
-        retry resolves to the same job and returns the original result instead of running a second,
-        separately billed screening.
+        Every response returned after the job is created carries a `SmileID-Job-ID` header, and a completed screening can always be read back from `GET /v3/status/{jobId}` — so if you have a job id, read it rather than resubmitting. If you do not (a network failure, or the gateway timing the request out on its own), resubmit with the same `SmileID-Idempotency-Key`: the retry resolves to the same job and returns the original result instead of running a second, separately billed screening.
       parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and
-            the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
-        - name: User-ID
-          in: header
-          required: false
-          description: >-
-            Partner-provided user identifier. Must agree with body `user_id` and any token-bound
-            user id — disagreement is a 403. If omitted everywhere, a TypeID is generated
-            automatically.
-          schema:
-            type: string
         - name: SmileID-Idempotency-Key
           in: header
           required: false
           description: >-
-            Opaque key, 16 to 128 characters of `A-Z a-z 0-9 - _`, that makes a submission safe to
-            repeat. The job id is derived from it, so a request carrying a key you have already used
-            resolves to that same job: it returns the original result and screens — and bills —
-            nothing a second time. Send one whenever you might retry, since a retry without a key
-            starts a new, separately billed screening.
+            Opaque key, 16 to 128 characters of `A-Z a-z 0-9 - _`, that makes a submission safe to repeat. The job id is derived from it, so a request carrying a key you have already used resolves to that same job: it returns the original result and screens — and bills — nothing a second time. Send one whenever you might retry, since a retry without a key starts a new, separately billed screening.
           schema:
             type: string
             example: kuda-onboarding-8f14e45fceea167a
       requestBody:
         required: true
         description: >-
-          Identical to `POST /v3/aml`, except that `callback_url` is optional because no callback is
-          sent. Sent as multipart/form-data. Scalar fields (full_name, birth_year, strict_match,
-          search_existing_user, user_id, source_sdk, source_sdk_version) are plain form fields.
-          Non-scalar fields must be sent as JSON-encoded strings in their form part: the array
-          fields countries and aliases (e.g. countries='["NG","KE"]') and the object fields consent,
-          user_details, metadata, and partner_params. Multipart has no native array encoding, so a
-          bare or repeated countries field is rejected — it must be a JSON array string.
+          Identical to `POST /v3/aml`, except that `callback_url` is optional because no callback is sent. Sent as multipart/form-data. Scalar fields (full_name, birth_year, strict_match, search_existing_user, user_id, source_sdk, source_sdk_version) are plain form fields. Non-scalar fields must be sent as JSON-encoded strings in their form part: the array fields countries and aliases (e.g. countries='["NG","KE"]') and the object fields consent, user_details, metadata, and partner_params. Multipart has no native array encoding, so a bare or repeated countries field is rejected — it must be a JSON array string.
         content:
           multipart/form-data:
             schema:
@@ -2448,14 +1893,11 @@ paths:
       responses:
         '200':
           description: >-
-            Screening completed. The body is the terminal result — the same payload the async
-            callback would have delivered.
+            Screening completed. The body is the terminal result — the same payload the async callback would have delivered.
           headers:
             Response-Signature:
               description: >-
-                Signature over Response-Timestamp and your partner id, keyed with your API key.
-                Identical in construction to the signature we send on webhooks, so existing
-                verification code applies unchanged.
+                Signature over Response-Timestamp and your partner id, keyed with your API key. Identical in construction to the signature we send on webhooks, so existing verification code applies unchanged.
               schema:
                 type: string
                 example: Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MGFiY2RlZmdoaWo=
@@ -2639,8 +2081,7 @@ paths:
                 message: You are out of credits. Add funds to your wallet to run more verifications.
         '403':
           description: >-
-            Forbidden — product not enabled, IP not allowlisted, production access not granted, or a
-            user id conflict between body, header, and token.
+            Forbidden — product not enabled, IP not allowlisted, production access not granted, or a user id conflict between body, header, and token.
           content:
             application/json:
               schema:
@@ -2658,8 +2099,7 @@ paths:
                     message: You are not authorized to do that.
         '404':
           description: >-
-            Not Found — `search_existing_user` was true but no usable prior record exists for this
-            user.
+            Not Found — `search_existing_user` was true but no usable prior record exists for this user.
           content:
             application/json:
               schema:
@@ -2677,10 +2117,7 @@ paths:
                     message: No prior KYC record with a usable name and country was found for this user.
         '408':
           description: >-
-            Request Timeout — the screening provider did not answer within the request deadline, so
-            no result was produced and nothing is billed. The job exists and is terminal in `error`,
-            so `GET /v3/status/{jobId}` will only ever return that error: resubmit rather than poll.
-            Send `SmileID-Idempotency-Key` to make the resubmission safe to repeat.
+            Request Timeout — the screening provider did not answer within the request deadline, so no result was produced and nothing is billed. The job exists and is terminal in `error`, so `GET /v3/status/{jobId}` will only ever return that error: resubmit rather than poll. Send `SmileID-Idempotency-Key` to make the resubmission safe to repeat.
           headers:
             SmileID-Job-ID:
               description: The Smile job id to poll for this screening.
@@ -2694,8 +2131,7 @@ paths:
               example:
                 status: Request Timeout
                 message: >-
-                  The screening provider did not respond in time. The job is still recorded —
-                  retrieve its result from /v3/status/{job_id}.
+                  The screening provider did not respond in time. The job is still recorded — retrieve its result from /v3/status/{job_id}.
         '413':
           description: Content Too Large — the request payload exceeds the size limit.
           content:
@@ -2725,14 +2161,11 @@ paths:
                 message: Rate limit exceeded. Please try again later.
         '500':
           description: >-
-            Internal Server Error. A screening that could not be completed for an internal reason is
-            reported here rather than as a 200 carrying `status: error`. As with a 408, the job
-            exists and its outcome can be read from `GET /v3/status/{jobId}`.
+            Internal Server Error. A screening that could not be completed for an internal reason is reported here rather than as a 200 carrying `status: error`. As with a 408, the job exists and its outcome can be read from `GET /v3/status/{jobId}`.
           headers:
             SmileID-Job-ID:
               description: >-
-                The Smile job id to poll for this screening. Present when the failure happened after
-                the job was created.
+                The Smile job id to poll for this screening. Present when the failure happened after the job was created.
               schema:
                 type: string
                 example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
@@ -2752,12 +2185,9 @@ paths:
         - SmileIDToken: []
       summary: Replay a callback for a completed verification
       description: >-
-        Looks up a previously completed verification by its TypeID, resolves the callback URL, and
-        re-sends the callback. The verification must have reached a terminal state (clear, block,
-        attention, or error) before its callback can be replayed.
+        Looks up a previously completed verification by its TypeID, resolves the callback URL, and re-sends the callback. The verification must have reached a terminal state (clear, block, attention, or error) before its callback can be replayed.
 
-        An optional `callback_url` in the request body overrides the stored URL, subject to the
-        partner's callback domain allowlist.
+        An optional `callback_url` in the request body overrides the stored URL, subject to the partner's callback domain allowlist.
       parameters:
         - name: job_id
           in: path
@@ -2770,8 +2200,7 @@ paths:
       requestBody:
         required: false
         description: >-
-          Optional body to override the callback URL. If omitted, the stored callback URL (from the
-          original verification or partner default) is used.
+          Optional body to override the callback URL. If omitted, the stored callback URL (from the original verification or partner default) is used.
 
           Send the body as `multipart/form-data`. Any other content type is rejected with 415.
         content:
@@ -2794,8 +2223,7 @@ paths:
                 message: Callback replay queued successfully.
         '400':
           description: >-
-            Bad Request — invalid job_id format, unrecognised product, or no valid callback URL
-            available.
+            Bad Request — invalid job_id format, unrecognised product, or no valid callback URL available.
           content:
             application/json:
               schema:
@@ -2827,8 +2255,7 @@ paths:
                 message: Invalid authentication credentials.
         '403':
           description: >-
-            Forbidden — IP not in allowlist, callback URL not in allowed domains, or security checks
-            failed.
+            Forbidden — IP not in allowlist, callback URL not in allowed domains, or security checks failed.
           content:
             application/json:
               schema:
@@ -2838,8 +2265,7 @@ paths:
                 message: You are not authorized to do that.
         '404':
           description: >-
-            Not Found — verification does not exist, does not belong to this partner, or has no
-            reference entry.
+            Not Found — verification does not exist, does not belong to this partner, or has no reference entry.
           content:
             application/json:
               schema:
@@ -2857,8 +2283,7 @@ paths:
                     message: Reference not found for this job
         '409':
           description: >-
-            Conflict — verification has not yet reached a terminal state. Wait for processing to
-            complete before replaying the callback.
+            Conflict — verification has not yet reached a terminal state. Wait for processing to complete before replaying the callback.
           content:
             application/json:
               schema:
@@ -2868,8 +2293,7 @@ paths:
                 message: Job is still processing. Callbacks can only be replayed for completed jobs.
         '415':
           description: >-
-            Unsupported Media Type — a body was sent with a `Content-Type` other than
-            `multipart/form-data`.
+            Unsupported Media Type — a body was sent with a `Content-Type` other than `multipart/form-data`.
           content:
             application/json:
               schema:
@@ -2986,9 +2410,7 @@ paths:
                   summary: Unrecognised reason value
                   value:
                     message: >-
-                      Field 'reason' must be one of: FIRST_PARTY_FRAUD, SECOND_PARTY_FRAUD,
-                      THIRD_PARTY_FRAUD, SYNTHETIC_IDENTITY, ACCOUNT_TAKEOVER, DOCUMENT_FORGERY,
-                      IDENTITY_FARMING, MULE_ACCOUNT, OTHER.
+                      Field 'reason' must be one of: FIRST_PARTY_FRAUD, SECOND_PARTY_FRAUD, THIRD_PARTY_FRAUD, SYNTHETIC_IDENTITY, ACCOUNT_TAKEOVER, DOCUMENT_FORGERY, IDENTITY_FARMING, MULE_ACCOUNT, OTHER.
                     status: Bad Request
                 missingNotesOnUnblock:
                   summary: Missing notes when clearing
@@ -3229,8 +2651,7 @@ paths:
                 $ref: '#/components/schemas/ServiceErrorResponse'
               example:
                 error: >-
-                  Country Code must be a valid ISO 3166-1 alpha-2 country code consisting of exactly
-                  two uppercase letters.
+                  Country Code must be a valid ISO 3166-1 alpha-2 country code consisting of exactly two uppercase letters.
                 code: '2413'
         '500':
           description: Internal server error.
@@ -3327,48 +2748,10 @@ paths:
       security:
         - SmileIDToken: []
       description: >-
-        Compares a selfie image against a provided comparison image (document, ID photo, or
-        portrait). The images are uploaded, validated at entry, then queued for async ML processing
-        (passive liveness, face matching, optional active liveness with liveness images). Results
-        are delivered via callback URL.
+        Compares a selfie image against a provided comparison image (document, ID photo, or portrait). The images are uploaded, validated at entry, then queued for async ML processing (passive liveness, face matching, optional active liveness with liveness images). Results are delivered via callback URL.
 
         If `user_id` is provided and the comparison passes, the user will be enrolled.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: ios
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.3.1
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
-          schema:
-            type: string
-            format: date-time
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: HMAC signature of the raw HTTP request body.
-          schema:
-            type: string
-        - name: User-ID
-          in: header
-          required: false
-          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-          schema:
-            type: string
+      parameters: []
       requestBody:
         required: true
         content:
@@ -3407,8 +2790,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      A valid callback_url is required in the request or a default callback URL must
-                      be configured in the portal.
+                      A valid callback_url is required in the request or a default callback URL must be configured in the portal.
                 missingSelfie:
                   summary: Missing selfie image
                   value:
@@ -3764,38 +3146,22 @@ paths:
                 payload:
                   type: object
                   description: >-
-                    Optional identity and consent fields to bind into the token. PII fields
-                    (id_number, given_names, last_name, email, phone_number) are validated, then
-                    replaced with opaque `pii_`-prefixed references — the issued JWT never carries
-                    raw PII. country, id_type and the consent fields stay in the clear, and
-                    callback_url is replaced by a resolvable `callback_`-prefixed id. Downstream v3
-                    endpoints inject these fields server-side, overriding any matching fields in the
-                    request body, so data bound to the token cannot be altered by the client. Fields
-                    provided here make the corresponding request body fields optional on downstream
-                    endpoints; GET /v3/services/config lists them as `token_provided_fields`.
-                    Consent takes the same nested object the v3 entry endpoints accept, and all four
-                    of its fields are required when you send it — an incomplete consent object is
-                    rejected with 400 naming the field that is missing.
+                    Optional identity and consent fields to bind into the token. PII fields (id_number, given_names, last_name, email, phone_number) are validated, then replaced with opaque `pii_`-prefixed references — the issued JWT never carries raw PII. country, id_type and the consent fields stay in the clear, and callback_url is replaced by a resolvable `callback_`-prefixed id. Downstream v3 endpoints inject these fields server-side, overriding any matching fields in the request body, so data bound to the token cannot be altered by the client. Fields provided here make the corresponding request body fields optional on downstream endpoints; GET /v3/services/config lists them as `token_provided_fields`. Consent takes the same nested object the v3 entry endpoints accept, and all four of its fields are required when you send it — an incomplete consent object is rejected with 400 naming the field that is missing.
                   properties:
                     country:
                       type: string
                       description: >-
-                        Country code or name. Accepts ISO 3166-1 alpha-2 codes (e.g. "NG") or full
-                        country names (e.g. "Nigeria"). Normalized to uppercase ISO 3166-1 alpha-2
-                        on the server. If id_type is also provided, the country/id_type combination
-                        is validated.
+                        Country code or name. Accepts ISO 3166-1 alpha-2 codes (e.g. "NG") or full country names (e.g. "Nigeria"). Normalized to uppercase ISO 3166-1 alpha-2 on the server. If id_type is also provided, the country/id_type combination is validated.
                       example: NG
                     id_type:
                       type: string
                       description: >-
-                        ID document type (e.g., NIN, BVN, DRIVERS_LICENSE). If country is also
-                        provided, the combination is validated against known ID types.
+                        ID document type (e.g., NIN, BVN, DRIVERS_LICENSE). If country is also provided, the combination is validated against known ID types.
                       example: NIN
                     id_number:
                       type: string
                       description: >-
-                        ID document number. If country and id_type are also provided, the format is
-                        validated against the expected regex pattern.
+                        ID document number. If country and id_type are also provided, the format is validated against the expected regex pattern.
                       example: '12345678901'
                     given_names:
                       type: string
@@ -3817,17 +3183,12 @@ paths:
                     callback_url:
                       type: string
                       description: >-
-                        URL to receive the async result callback, or a `callback_`-prefixed id from
-                        a previously issued token. Overrides the callback_url in the request body of
-                        downstream endpoints.
+                        URL to receive the async result callback, or a `callback_`-prefixed id from a previously issued token. Overrides the callback_url in the request body of downstream endpoints.
                       example: https://example.com/callback
                     consent:
                       type: object
                       description: >-
-                        ISO 27560 consent record, in the same shape the v3 entry endpoints accept.
-                        Optional as a whole; when present, all four fields are required and no other
-                        field is allowed. Injected as `consent` on downstream endpoints, so a
-                        request that carries it need not repeat consent in the body.
+                        ISO 27560 consent record, in the same shape the v3 entry endpoints accept. Optional as a whole; when present, all four fields are required and no other field is allowed. Injected as `consent` on downstream endpoints, so a request that carries it need not repeat consent in the body.
                       required:
                         - granted
                         - granted_at
@@ -3838,8 +3199,7 @@ paths:
                         granted:
                           type: boolean
                           description: >-
-                            Whether the end user granted consent. Must be `true`; any other value is
-                            rejected.
+                            Whether the end user granted consent. Must be `true`; any other value is rejected.
                           enum:
                             - true
                           example: true
@@ -3847,23 +3207,19 @@ paths:
                           type: string
                           format: date-time
                           description: >-
-                            When consent was granted, as an ISO 8601 timestamp. Must not be more
-                            than a minute in the future, so a value stamped from your own clock is
-                            fine. Include the timezone — without one the value is read as UTC.
+                            When consent was granted, as an ISO 8601 timestamp. Must not be more than a minute in the future, so a value stamped from your own clock is fine. Include the timezone — without one the value is read as UTC.
                           example: '2026-01-01T09:00:00.000Z'
                         notice_language:
                           type: string
                           pattern: ^[A-Za-z]{2}$
                           description: >-
-                            Two-letter ISO 639-1 code for the language the privacy notice was shown
-                            in. Normalised to uppercase.
+                            Two-letter ISO 639-1 code for the language the privacy notice was shown in. Normalised to uppercase.
                           example: EN
                         notice_privacy_policy_url:
                           type: string
                           format: uri
                           description: >-
-                            URL of the privacy notice the end user was shown. Must use the http or
-                            https scheme.
+                            URL of the privacy notice the end user was shown. Must use the http or https scheme.
                           example: https://example.com/privacy-policy
       responses:
         '200':
@@ -3930,8 +3286,7 @@ paths:
         - SmileIDToken: []
       summary: Get verification status
       description: >-
-        Retrieves the current status of a previously submitted verification. Returns the latest
-        state from the verification lifecycle (processing, clear, block, attention, error).
+        Retrieves the current status of a previously submitted verification. Returns the latest state from the verification lifecycle (processing, clear, block, attention, error).
       parameters:
         - name: jobId
           in: path
@@ -4078,8 +3433,7 @@ components:
           type: array
           minItems: 1
           description: >-
-            ISO 3166-1 alpha-2 country codes (uppercase) to screen against. Send as a JSON-encoded
-            string in the multipart body, e.g. '["NG","GH"]'.
+            ISO 3166-1 alpha-2 country codes (uppercase) to screen against. Send as a JSON-encoded string in the multipart body, e.g. '["NG","GH"]'.
           items:
             type: string
             minLength: 2
@@ -4089,8 +3443,7 @@ components:
           type: string
           minLength: 1
           description: >-
-            Full name of the individual to screen. Required unless `search_existing_user` is true,
-            in which case the name is resolved from the user's prior KYC enrollment.
+            Full name of the individual to screen. Required unless `search_existing_user` is true, in which case the name is resolved from the user's prior KYC enrollment.
           example: Jane Doe
         birth_year:
           type: string
@@ -4102,15 +3455,13 @@ components:
           type: boolean
           default: true
           description: >-
-            When true (default) a higher match threshold is used, returning fewer, more precise
-            matches. When false a broader threshold is used.
+            When true (default) a higher match threshold is used, returning fewer, more precise matches. When false a broader threshold is used.
           example: true
         aliases:
           type: array
           maxItems: 20
           description: >-
-            Optional alternate names / spellings to screen alongside full_name. Send as a
-            JSON-encoded string in the multipart body, e.g. '["Jane A. Doe","J. Doe"]'.
+            Optional alternate names / spellings to screen alongside full_name. Send as a JSON-encoded string in the multipart body, e.g. '["Jane A. Doe","J. Doe"]'.
           items:
             type: string
             minLength: 1
@@ -4119,16 +3470,12 @@ components:
         search_existing_user:
           type: boolean
           description: >-
-            When set, reuses the name (and birth year) from the user's prior Biometric KYC or
-            Document Verification enrollment. Requires `user_id` (or the User-ID header), and that
-            user must be an enrollee of this partner with a prior KYC record carrying a usable name
-            and country — otherwise the request is rejected with a 404.
+            When set, reuses the name (and birth year) from the user's prior Biometric KYC or Document Verification enrollment. Requires `user_id` (or the User-ID header), and that user must be an enrollee of this partner with a prior KYC record carrying a usable name and country — otherwise the request is rejected with a 404.
           example: false
         user_id:
           type: string
           description: >-
-            Partner-provided user identifier. Optional, but required in the body when
-            `search_existing_user` is true; the User-ID header and token only have to agree with it.
+            Partner-provided user identifier. Optional, but required in the body when `search_existing_user` is true; the User-ID header and token only have to agree with it.
           example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
         user_details:
           type: object
@@ -4163,8 +3510,7 @@ components:
               pattern: ^\+[1-9]\d{6,14}$
               nullable: true
               description: >-
-                Phone number in E.164 format (must start with +). At least one of email or
-                phone_number is required.
+                Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
               example: '+2348012345678'
         consent:
           $ref: '#/components/schemas/Consent'
@@ -4173,9 +3519,7 @@ components:
           format: uri
           pattern: ^https://
           description: >-
-            URL to receive the async result callback. Falls back to partner default if omitted. Must
-            be on the partner's allowed callback domains list. Can be provided via the token payload
-            (bound at /v3/token) instead of the request body.
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: https://example.com/callback
         partner_params:
           type: object
@@ -4417,8 +3761,7 @@ components:
           type: boolean
           default: false
           description: >-
-            If true, skips selfie and liveness image upload and uses the enrolled image for
-            re-verification. Useful for server-side re-authentication.
+            If true, skips selfie and liveness image upload and uses the enrolled image for re-verification. Useful for server-side re-authentication.
         callback_url:
           type: string
           format: uri
@@ -4458,8 +3801,7 @@ components:
           type: string
           format: binary
           description: >-
-            JPEG selfie image used as the enrollment reference photo. Must be a clear, well-lit,
-            front-facing photo.
+            JPEG selfie image used as the enrollment reference photo. Must be a clear, well-lit, front-facing photo.
         liveness_images:
           type: array
           minItems: 6
@@ -4468,8 +3810,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of JPEG liveness sequence images captured during the liveness check. These images
-            are used for passive and active liveness verification.
+            Array of JPEG liveness sequence images captured during the liveness check. These images are used for passive and active liveness verification.
         consent:
           $ref: '#/components/schemas/Consent'
         user_details:
@@ -4488,54 +3829,49 @@ components:
               type: string
               minLength: 1
               description: >-
-                Given name(s) / first name of the individual being enrolled. Can be provided via the
-                token payload (bound at /v3/token) instead of the request body.
+                Given name(s) / first name of the individual being enrolled. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: John
             last_name:
               type: string
               minLength: 1
               description: >-
-                Last name / surname of the individual being enrolled. Can be provided via the token
-                payload (bound at /v3/token) instead of the request body.
+                Last name / surname of the individual being enrolled. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: Doe
             email:
               type: string
               format: email
               nullable: true
               description: >-
-                Email address of the individual being enrolled. At least one of email or
-                phone_number is required. Can be provided via the token payload (bound at /v3/token)
-                instead of the request body.
+                Email address of the individual being enrolled. At least one of email or phone_number is required. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: john@example.com
             phone_number:
               type: string
               pattern: ^\+[1-9]\d{6,14}$
               nullable: true
               description: >-
-                Phone number in E.164 format (must start with +). At least one of email or
-                phone_number is required.
+                Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
               example: '+2348012345678'
         allow_new_enroll:
           type: boolean
           default: false
           description: >-
-            If true, allows re-enrollment for a user who is already enrolled. The existing
-            enrollment will be replaced with the new selfie. If false (default), enrollment fails if
-            the user is already enrolled.
+            If true, allows re-enrollment for a user who is already enrolled. The existing enrollment will be replaced with the new selfie. If false (default), enrollment fails if the user is already enrolled.
+        user_id:
+          type: string
+          description: >-
+            Optional partner-provided user identifier. Must match the token user identifier when both are supplied. If no user identifier is supplied, a TypeID is generated automatically.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
         callback_url:
           type: string
           format: uri
           pattern: ^https://
           description: >-
-            URL to receive the async result callback. Falls back to partner default if omitted. Must
-            be on the partner's allowed callback domains list. Can be provided via the token payload
-            (bound at /v3/token) instead of the request body.
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: https://example.com/callback
         sandbox_result:
           type: number
           description: >-
-            Force a specific result code in sandbox/test environments. Only effective when the
-            partner account is in sandbox mode.
+            Force a specific result code in sandbox/test environments. Only effective when the partner account is in sandbox mode.
           example: 840
         partner_params:
           type: object
@@ -4574,8 +3910,7 @@ components:
           type: string
           format: binary
           description: >-
-            JPEG selfie image used for biometric verification. Must be a clear, well-lit,
-            front-facing photo.
+            JPEG selfie image used for biometric verification. Must be a clear, well-lit, front-facing photo.
         liveness_images:
           type: array
           minItems: 6
@@ -4584,8 +3919,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of JPEG liveness sequence images captured during the liveness check. These images
-            are used for passive and active liveness verification.
+            Array of JPEG liveness sequence images captured during the liveness check. These images are used for passive and active liveness verification.
         consent:
           $ref: '#/components/schemas/Consent'
         country:
@@ -4593,20 +3927,17 @@ components:
           minLength: 2
           maxLength: 2
           description: >-
-            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload
-            (bound at /v3/token) instead of the request body.
+            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: NG
         id_type:
           type: string
           description: >-
-            ID document type (e.g., NIN, BVN, DRIVERS_LICENSE). Can be provided via the token
-            payload (bound at /v3/token) instead of the request body.
+            ID document type (e.g., NIN, BVN, DRIVERS_LICENSE). Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: NIN
         id_number:
           type: string
           description: >-
-            ID document number. Must match the regex format for the country/id_type. Can be provided
-            via the token payload (bound at /v3/token) instead of the request body.
+            ID document number. Must match the regex format for the country/id_type. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: '12345678901'
         user_details:
           type: object
@@ -4624,47 +3955,44 @@ components:
               type: string
               minLength: 1
               description: >-
-                Given name(s) / first name of the individual. Can be provided via the token payload
-                (bound at /v3/token) instead of the request body.
+                Given name(s) / first name of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: John
             last_name:
               type: string
               minLength: 1
               description: >-
-                Last name / surname of the individual. Can be provided via the token payload (bound
-                at /v3/token) instead of the request body.
+                Last name / surname of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: Doe
             email:
               type: string
               format: email
               nullable: true
               description: >-
-                Email address of the individual. At least one of email or phone_number is required.
-                Can be provided via the token payload (bound at /v3/token) instead of the request
-                body.
+                Email address of the individual. At least one of email or phone_number is required. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: john@example.com
             phone_number:
               type: string
               pattern: ^\+[1-9]\d{6,14}$
               nullable: true
               description: >-
-                Phone number in E.164 format (must start with +). At least one of email or
-                phone_number is required.
+                Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
               example: '+2348012345678'
+        user_id:
+          type: string
+          description: >-
+            Optional partner-provided user identifier. Must match the token user identifier when both are supplied. If no user identifier is supplied, a TypeID is generated automatically.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
         callback_url:
           type: string
           format: uri
           pattern: ^https://
           description: >-
-            URL to receive the async result callback. Falls back to partner default if omitted. Must
-            be on the partner's allowed callback domains list. Can be provided via the token payload
-            (bound at /v3/token) instead of the request body.
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: https://example.com/callback
         sandbox_result:
           type: number
           description: >-
-            Force a specific result code in sandbox/test environments. Only effective when the
-            partner account is in sandbox mode.
+            Force a specific result code in sandbox/test environments. Only effective when the partner account is in sandbox mode.
           example: 1220
         partner_params:
           type: object
@@ -4702,8 +4030,7 @@ components:
           type: string
           format: binary
           description: >-
-            JPEG selfie image used for biometric verification. Must be a clear, well-lit,
-            front-facing photo.
+            JPEG selfie image used for biometric verification. Must be a clear, well-lit, front-facing photo.
         liveness_images:
           type: array
           minItems: 6
@@ -4712,8 +4039,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of JPEG liveness sequence images captured during the liveness check. These images
-            are used for liveness verification.
+            Array of JPEG liveness sequence images captured during the liveness check. These images are used for liveness verification.
         document:
           type: string
           format: binary
@@ -4722,8 +4048,7 @@ components:
           type: string
           format: binary
           description: >-
-            Back of the identity document (JPEG or PNG). Optional. Provide when the document has
-            relevant information on the back (e.g., barcodes, MRZ on some document types).
+            Back of the identity document (JPEG or PNG). Optional. Provide when the document has relevant information on the back (e.g., barcodes, MRZ on some document types).
         consent:
           $ref: '#/components/schemas/Consent'
         country:
@@ -4731,15 +4056,12 @@ components:
           minLength: 2
           maxLength: 2
           description: >-
-            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload
-            (bound at /v3/token) instead of the request body.
+            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: NG
         id_type:
           type: string
           description: >-
-            ID document type (e.g., DRIVERS_LICENSE, NATIONAL_ID). Optional for standard Document
-            Verification — the document type is auto-classified if not provided. Can be provided via
-            the token payload (bound at /v3/token) instead of the request body.
+            ID document type (e.g., DRIVERS_LICENSE, NATIONAL_ID). Optional for standard Document Verification — the document type is auto-classified if not provided. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: DRIVERS_LICENSE
         user_details:
           type: object
@@ -4757,41 +4079,39 @@ components:
               type: string
               minLength: 1
               description: >-
-                Given name(s) / first name of the individual. Can be provided via the token payload
-                (bound at /v3/token) instead of the request body.
+                Given name(s) / first name of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: John
             last_name:
               type: string
               minLength: 1
               description: >-
-                Last name / surname of the individual. Can be provided via the token payload (bound
-                at /v3/token) instead of the request body.
+                Last name / surname of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: Doe
             email:
               type: string
               format: email
               nullable: true
               description: >-
-                Email address of the individual. At least one of email or phone_number is required.
-                Can be provided via the token payload (bound at /v3/token) instead of the request
-                body.
+                Email address of the individual. At least one of email or phone_number is required. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: john@example.com
             phone_number:
               type: string
               pattern: ^\+[1-9]\d{6,14}$
               nullable: true
               description: >-
-                Phone number in E.164 format (must start with +). At least one of email or
-                phone_number is required.
+                Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
               example: '+2348012345678'
+        user_id:
+          type: string
+          description: >-
+            Optional partner-provided user identifier. Must match the token user identifier when both are supplied. If no user identifier is supplied, a TypeID is generated automatically.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
         callback_url:
           type: string
           format: uri
           pattern: ^https://
           description: >-
-            URL to receive the async result callback. Falls back to partner default if omitted. Must
-            be on the partner's allowed callback domains list. Can be provided via the token payload
-            (bound at /v3/token) instead of the request body.
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: https://example.com/callback
         partner_params:
           type: object
@@ -4830,8 +4150,7 @@ components:
           type: string
           format: binary
           description: >-
-            JPEG selfie image used for biometric verification. Must be a clear, well-lit,
-            front-facing photo.
+            JPEG selfie image used for biometric verification. Must be a clear, well-lit, front-facing photo.
         liveness_images:
           type: array
           minItems: 6
@@ -4840,20 +4159,17 @@ components:
             type: string
             format: binary
           description: >-
-            Array of JPEG liveness sequence images captured during the liveness check. These images
-            are used for liveness verification.
+            Array of JPEG liveness sequence images captured during the liveness check. These images are used for liveness verification.
         document:
           type: string
           format: binary
           description: >-
-            Front of the identity document (JPEG or PNG). Used for document verification and data
-            extraction.
+            Front of the identity document (JPEG or PNG). Used for document verification and data extraction.
         document_back:
           type: string
           format: binary
           description: >-
-            Back of the identity document (JPEG or PNG). Optional. Provide when the document has
-            relevant information on the back (e.g., barcodes, MRZ on some document types).
+            Back of the identity document (JPEG or PNG). Optional. Provide when the document has relevant information on the back (e.g., barcodes, MRZ on some document types).
         consent:
           $ref: '#/components/schemas/Consent'
         country:
@@ -4861,15 +4177,12 @@ components:
           minLength: 2
           maxLength: 2
           description: >-
-            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload
-            (bound at /v3/token) instead of the request body.
+            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: NG
         id_type:
           type: string
           description: >-
-            ID document type (e.g., DRIVERS_LICENSE, NATIONAL_ID). Required for Enhanced Document
-            Verification. Can be provided via the token payload (bound at /v3/token) instead of the
-            request body.
+            ID document type (e.g., DRIVERS_LICENSE, NATIONAL_ID). Required for Enhanced Document Verification. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: DRIVERS_LICENSE
         user_details:
           type: object
@@ -4887,41 +4200,39 @@ components:
               type: string
               minLength: 1
               description: >-
-                Given name(s) / first name of the individual. Can be provided via the token payload
-                (bound at /v3/token) instead of the request body.
+                Given name(s) / first name of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: John
             last_name:
               type: string
               minLength: 1
               description: >-
-                Last name / surname of the individual. Can be provided via the token payload (bound
-                at /v3/token) instead of the request body.
+                Last name / surname of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: Doe
             email:
               type: string
               format: email
               nullable: true
               description: >-
-                Email address of the individual. At least one of email or phone_number is required.
-                Can be provided via the token payload (bound at /v3/token) instead of the request
-                body.
+                Email address of the individual. At least one of email or phone_number is required. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: john@example.com
             phone_number:
               type: string
               pattern: ^\+[1-9]\d{6,14}$
               nullable: true
               description: >-
-                Phone number in E.164 format (must start with +). At least one of email or
-                phone_number is required.
+                Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
               example: '+2348012345678'
+        user_id:
+          type: string
+          description: >-
+            Optional partner-provided user identifier. Must match the token user identifier when both are supplied. If no user identifier is supplied, a TypeID is generated automatically.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
         callback_url:
           type: string
           format: uri
           pattern: ^https://
           description: >-
-            URL to receive the async result callback. Falls back to partner default if omitted. Must
-            be on the partner's allowed callback domains list. Can be provided via the token payload
-            (bound at /v3/token) instead of the request body.
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: https://example.com/callback
         partner_params:
           type: object
@@ -4959,20 +4270,17 @@ components:
           minLength: 2
           maxLength: 2
           description: >-
-            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload
-            (bound at /v3/token) instead of the request body.
+            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: NG
         id_type:
           type: string
           description: >-
-            ID document type (e.g., NIN, BVN, DRIVERS_LICENSE). Can be provided via the token
-            payload (bound at /v3/token) instead of the request body.
+            ID document type (e.g., NIN, BVN, DRIVERS_LICENSE). Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: NIN
         id_number:
           type: string
           description: >-
-            ID document number. Must match the regex format for the country/id_type. Can be provided
-            via the token payload (bound at /v3/token) instead of the request body.
+            ID document number. Must match the regex format for the country/id_type. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: '12345678901'
         user_details:
           type: object
@@ -4990,42 +4298,41 @@ components:
               type: string
               minLength: 1
               description: >-
-                Given names of the individual. Can be provided via the token payload (bound at
-                /v3/token) instead of the request body.
+                Given names of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: John
             last_name:
               type: string
               minLength: 1
               description: >-
-                Last name / surname of the individual. Can be provided via the token payload (bound
-                at /v3/token) instead of the request body.
+                Last name / surname of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: Doe
             email:
               type: string
               format: email
               nullable: true
               description: >-
-                Email address. At least one of email or phone_number is required. Can be provided
-                via the token payload (bound at /v3/token) instead of the request body.
+                Email address. At least one of email or phone_number is required. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: john@example.com
             phone_number:
               type: string
               pattern: ^\+[1-9]\d{6,14}$
               nullable: true
               description: >-
-                Phone number in E.164 format (must start with +). At least one of email or
-                phone_number is required.
+                Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
               example: '+2348012345678'
         consent:
           $ref: '#/components/schemas/Consent'
+        user_id:
+          type: string
+          description: >-
+            Optional partner-provided user identifier. Must match the token user identifier when both are supplied. If no user identifier is supplied, a TypeID is generated automatically.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
         callback_url:
           type: string
           format: uri
           pattern: ^https://
           description: >-
-            URL to receive the async result callback. Falls back to partner default if omitted. Must
-            be on the partner's allowed callback domains list. Can be provided via the token payload
-            (bound at /v3/token) instead of the request body.
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: https://example.com/callback
         bank_code:
           type: string
@@ -5059,10 +4366,7 @@ components:
     GatewayErrorResponse:
       type: object
       description: >-
-        Error envelope produced by API Gateway itself, for requests rejected before they reach the
-        endpoint (authorization, payload limit) or where the function could not be invoked. Carries
-        two always-null fields that the endpoint's own errors omit, so parsers should treat `status`
-        and `message` as the only reliable keys.
+        Error envelope produced by API Gateway itself, for requests rejected before they reach the endpoint (authorization, payload limit) or where the function could not be invoked. Carries two always-null fields that the endpoint's own errors omit, so parsers should treat `status` and `message` as the only reliable keys.
       required:
         - status
         - message
@@ -5096,10 +4400,7 @@ components:
           minLength: 1
           nullable: true
           description: >-
-            Partner-provided user identifier. Optional in general; required when
-            `search_existing_user` is `true`. Reconciled with the `User-ID` header and any
-            token-bound user id after authentication — disagreement is a 403. Generated
-            automatically as a TypeID when omitted everywhere.
+            Partner-provided user identifier. Optional in general; required when `search_existing_user` is `true`. Reconciled with the `User-ID` header and any token-bound user id after authentication — disagreement is a 403. Generated automatically as a TypeID when omitted everywhere.
           example: user-1234
         countries:
           type: array
@@ -5109,9 +4410,7 @@ components:
             minLength: 2
             maxLength: 2
           description: >-
-            ISO 3166-1 alpha-2 country codes (uppercase) to screen against. Remains authoritative
-            for the screening even when `search_existing_user` is `true`. Sent as a JSON-encoded
-            array string in the multipart part (e.g. `["NG","KE"]`).
+            ISO 3166-1 alpha-2 country codes (uppercase) to screen against. Remains authoritative for the screening even when `search_existing_user` is `true`. Sent as a JSON-encoded array string in the multipart part (e.g. `["NG","KE"]`).
           example:
             - NG
             - KE
@@ -5119,25 +4418,20 @@ components:
           type: string
           minLength: 1
           description: >-
-            Full name to screen. Remains authoritative for the screening — never replaced or
-            compared with prior enrollee information, even when `search_existing_user` is `true`.
+            Full name to screen. Remains authoritative for the screening — never replaced or compared with prior enrollee information, even when `search_existing_user` is `true`.
           example: John Doe
         birth_year:
           type: string
           pattern: ^\d{4}$
           nullable: true
           description: >-
-            Optional four-digit birth year, minimum 1000 and maximum the current UTC year. A bare
-            integer is also accepted. Full dates, decimals, non-four-digit values, and future years
-            are rejected.
+            Optional four-digit birth year, minimum 1000 and maximum the current UTC year. A bare integer is also accepted. Full dates, decimals, non-four-digit values, and future years are rejected.
           example: '1990'
         strict_match:
           type: boolean
           default: true
           description: >-
-            Optional. When `true` (default), uses the stricter match filter set; when `false`, uses
-            a looser filter set. Accepts standard multipart boolean string representations
-            (`"true"`/`"false"`). Always echoed back on the callback.
+            Optional. When `true` (default), uses the stricter match filter set; when `false`, uses a looser filter set. Accepts standard multipart boolean string representations (`"true"`/`"false"`). Always echoed back on the callback.
         aliases:
           type: array
           maxItems: 20
@@ -5146,20 +4440,14 @@ components:
             minLength: 1
             maxLength: 256
           description: >-
-            Optional list of alternate names to screen, at most 20 entries, each at most 256
-            characters. Sent as a JSON-encoded array string in the multipart part (e.g. `["Johnny
-            Doe"]`).
+            Optional list of alternate names to screen, at most 20 entries, each at most 256 characters. Sent as a JSON-encoded array string in the multipart part (e.g. `["Johnny Doe"]`).
           example:
             - Johnny Doe
         search_existing_user:
           type: boolean
           default: false
           description: >-
-            Optional. A gate, not a data source: when `true`, requires the resolved `user_id` to
-            belong to a partner-scoped, non-deleted enrollee with at least one non-expired prior KYC
-            record carrying a usable name and country. It never overwrites `full_name`, `countries`,
-            or `birth_year` — those stay authoritative. Accepts standard multipart boolean string
-            representations.
+            Optional. A gate, not a data source: when `true`, requires the resolved `user_id` to belong to a partner-scoped, non-deleted enrollee with at least one non-expired prior KYC record carrying a usable name and country. It never overwrites `full_name`, `countries`, or `birth_year` — those stay authoritative. Accepts standard multipart boolean string representations.
         consent:
           $ref: '#/components/schemas/Consent'
         user_details:
@@ -5173,8 +4461,7 @@ components:
             - required:
                 - phone_number
           description: >-
-            Consumer-stated PII fields for the screened user. Either email or phone_number must be
-            provided.
+            Consumer-stated PII fields for the screened user. Either email or phone_number must be provided.
           properties:
             given_names:
               type: string
@@ -5197,16 +4484,14 @@ components:
               pattern: ^\+[1-9]\d{6,14}$
               nullable: true
               description: >-
-                Phone number in E.164 format (must start with +). At least one of email or
-                phone_number is required.
+                Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
               example: '+2348012345678'
         callback_url:
           type: string
           format: uri
           pattern: ^https://
           description: >-
-            URL to receive the async result callback. Falls back to partner default if omitted. Must
-            be on the partner's allowed callback domains list.
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list.
           example: https://example.com/callback
         partner_params:
           type: object
@@ -5267,8 +4552,7 @@ components:
     AmlPersonMatch:
       type: object
       description: >-
-        A single sanctions/PEP/adverse-media hit. Public snake_case fields only — internal provider
-        references (e.g. sigma_ref) are always stripped before the callback is sent.
+        A single sanctions/PEP/adverse-media hit. Public snake_case fields only — internal provider references (e.g. sigma_ref) are always stripped before the callback is sent.
       additionalProperties: true
       properties:
         name:
@@ -5280,9 +4564,7 @@ components:
             additionalProperties: true
         news_summary:
           description: >-
-            Per-category summary of the person's news-media exposure. The raw article list the
-            provider returns under `adverse_media` is never included in the callback; a screening
-            whose only hits are news media resolves to `attention` / `news_media_match`.
+            Per-category summary of the person's news-media exposure. The raw article list the provider returns under `adverse_media` is never included in the callback; a screening whose only hits are news media resolves to `attention` / `news_media_match`.
           type: array
           items:
             type: object
@@ -5386,8 +4668,7 @@ components:
           type: string
           format: date-time
           description: >-
-            ISO 8601 timestamp the terminal outcome was reached. Omitted only if the terminal state
-            could not be read.
+            ISO 8601 timestamp the terminal outcome was reached. Omitted only if the terminal state could not be read.
         product:
           type: string
           enum:
@@ -5398,14 +4679,12 @@ components:
           additionalProperties:
             type: string
           description: >-
-            Partner-supplied key-value metadata, with internal transport keys (`_sandbox_v3`,
-            `job_id`, `job_type`, `user_id`) stripped. `null` when empty.
+            Partner-supplied key-value metadata, with internal transport keys (`_sandbox_v3`, `job_id`, `job_type`, `user_id`) stripped. `null` when empty.
         kyc_receipt:
           type: string
           nullable: true
           description: >-
-            Signed receipt URL. `null` on submission; populated for `clear`, `block`, and
-            `attention` outcomes. Remains `null` for `error`.
+            Signed receipt URL. `null` on submission; populated for `clear`, `block`, and `attention` outcomes. Remains `null` for `error`.
         strict_match:
           type: boolean
           description: The resolved `strict_match` value used for the screening.
@@ -5450,8 +4729,7 @@ components:
           nullable: true
           additionalProperties: true
           description: >-
-            Device/network signals captured at submission time. Always `null` for an `error`
-            outcome, and best-effort `null` when no metadata was captured.
+            Device/network signals captured at submission time. Always `null` for an `error` outcome, and best-effort `null` when no metadata was captured.
     ReplayCallbackRequest:
       type: object
       properties:
@@ -5460,9 +4738,7 @@ components:
           format: uri
           pattern: ^https://
           description: >-
-            Override callback URL. Must be on the partner's callback domain allowlist. If omitted,
-            the stored callback URL is used. Can also be provided via the token payload (see
-            /v3/token).
+            Override callback URL. Must be on the partner's callback domain allowlist. If omitted, the stored callback URL is used. Can also be provided via the token payload (see /v3/token).
           example: https://partner.example.com/webhook
     ReplayCallbackResponse:
       type: object
@@ -5955,8 +5231,7 @@ components:
         status:
           type: string
           description: >-
-            Verification status. Terminal states (clear, block, attention, error) are returned with
-            HTTP 200; processing is returned with HTTP 202; not_found is returned with HTTP 404.
+            Verification status. Terminal states (clear, block, attention, error) are returned with HTTP 200; processing is returned with HTTP 202; not_found is returned with HTTP 404.
           enum:
             - clear
             - block

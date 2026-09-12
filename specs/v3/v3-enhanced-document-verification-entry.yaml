@@ -12,24 +12,13 @@ info:
   title: V3 Enhanced Document Verification API
   version: '1.0.0'
   description: >-
-    Async Enhanced Document Verification endpoint.
-    Combines document verification with identity data cross-referencing.
-    Accepts a selfie image, liveness images, and a document image (front, and optionally back),
-    along with a required id_type.
-    Returns HTTP 202 with a job_id and user_id to track the result via callback.
+    Async Enhanced Document Verification endpoint. Combines document verification with identity data cross-referencing. Accepts a selfie image, liveness images, and a document image (front, and optionally back), along with a required id_type. Returns HTTP 202 with a job_id and user_id to track the result via callback.
 
     Authentication: token-based (token header from /v3/token).
 
     At least one of `email` or `phone_number` is required.
 
-    Token Payload: Identity fields (country, id_type, given_names, last_name,
-    email, phone_number, callback_url) and the ISO 27560 consent fields can be
-    bound to the authentication token via the token payload feature at
-    /v3/token (PII fields are held as opaque references, never raw values).
-    When present in the token, these fields are injected automatically and
-    override any values in the request body. Fields provided via the token do
-    not need to be repeated in the request body; GET /v3/services/config lists
-    them as token_provided_fields.
+    Token Payload: Identity fields (country, id_type, given_names, last_name, email, phone_number, callback_url) and the ISO 27560 consent fields can be bound to the authentication token via the token payload feature at /v3/token (PII fields are held as opaque references, never raw values). When present in the token, these fields are injected automatically and override any values in the request body. Fields provided via the token do not need to be repeated in the request body; GET /v3/services/config lists them as token_provided_fields.
 tags:
   - name: Enhanced Document Verification
 paths:
@@ -42,64 +31,8 @@ paths:
       security:
         - SmileIDToken: []
       description: >-
-        Verifies a user's identity by comparing a selfie against a document image and
-        cross-referencing extracted data for additional verification.
-        The selfie and liveness images are uploaded alongside a document photo (front, and
-        optionally back). The id_type is required for this endpoint.
-        Results are delivered asynchronously via callback URL.
-      parameters:
-        - name: SmileID-Partner-ID
-          in: header
-          required: true
-          description: Partner identifier (numeric, 3+ digits).
-          schema:
-            type: string
-            pattern: '^\d{3,}$'
-            example: '1234'
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: 'android'
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: '10.4.2'
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
-            Required when your Smile ID account is configured to use SDK/partner secret HMAC
-            authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret
-            and the value of SmileID-Timestamp as salt. Required when your Smile ID
-            account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: '4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2'
-        - name: User-ID
-          in: header
-          required: false
-          description: >-
-            Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-          schema:
-            type: string
+        Verifies a user's identity by comparing a selfie against a document image and cross-referencing extracted data for additional verification. The selfie and liveness images are uploaded alongside a document photo (front, and optionally back). The id_type is required for this endpoint. Results are delivered asynchronously via callback URL.
+      parameters: []
       requestBody:
         required: true
         content:
@@ -256,7 +189,6 @@ paths:
               example:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
-
 components:
   securitySchemes:
     SmileIDToken:
@@ -281,8 +213,7 @@ components:
           type: string
           format: binary
           description: >-
-            JPEG selfie image used for biometric verification.
-            Must be a clear, well-lit, front-facing photo.
+            JPEG selfie image used for biometric verification. Must be a clear, well-lit, front-facing photo.
         liveness_images:
           type: array
           minItems: 6
@@ -291,21 +222,17 @@ components:
             type: string
             format: binary
           description: >-
-            Array of JPEG liveness sequence images captured during the liveness check.
-            These images are used for liveness verification.
+            Array of JPEG liveness sequence images captured during the liveness check. These images are used for liveness verification.
         document:
           type: string
           format: binary
           description: >-
-            Front of the identity document (JPEG or PNG).
-            Used for document verification and data extraction.
+            Front of the identity document (JPEG or PNG). Used for document verification and data extraction.
         document_back:
           type: string
           format: binary
           description: >-
-            Back of the identity document (JPEG or PNG). Optional.
-            Provide when the document has relevant information on the back (e.g., barcodes,
-            MRZ on some document types).
+            Back of the identity document (JPEG or PNG). Optional. Provide when the document has relevant information on the back (e.g., barcodes, MRZ on some document types).
         consent:
           $ref: '#/components/schemas/Consent'
         country:
@@ -313,15 +240,12 @@ components:
           minLength: 2
           maxLength: 2
           description: >-
-            ISO 3166-1 alpha-2 country code (uppercase).
-            Can be provided via the token payload (bound at /v3/token) instead of the request body.
+            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: NG
         id_type:
           type: string
           description: >-
-            ID document type (e.g., DRIVERS_LICENSE, NATIONAL_ID).
-            Required for Enhanced Document Verification.
-            Can be provided via the token payload (bound at /v3/token) instead of the request body.
+            ID document type (e.g., DRIVERS_LICENSE, NATIONAL_ID). Required for Enhanced Document Verification. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: DRIVERS_LICENSE
         user_details:
           type: object
@@ -332,48 +256,44 @@ components:
             - required: [email]
             - required: [phone_number]
           description: >-
-            Consumer-stated PII fields for the user.
-            Either email or phone_number must be provided.
+            Consumer-stated PII fields for the user. Either email or phone_number must be provided.
           properties:
             given_names:
               type: string
               minLength: 1
               description: >-
-                Given name(s) / first name of the individual.
-                Can be provided via the token payload (bound at /v3/token) instead of the request body.
+                Given name(s) / first name of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: John
             last_name:
               type: string
               minLength: 1
               description: >-
-                Last name / surname of the individual.
-                Can be provided via the token payload (bound at /v3/token) instead of the request body.
+                Last name / surname of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: Doe
             email:
               type: string
               format: email
               nullable: true
               description: >-
-                Email address of the individual.
-                At least one of email or phone_number is required.
-                Can be provided via the token payload (bound at /v3/token) instead of the request body.
+                Email address of the individual. At least one of email or phone_number is required. Can be provided via the token payload (bound at /v3/token) instead of the request body.
               example: john@example.com
             phone_number:
               type: string
               pattern: '^\+[1-9]\d{6,14}$'
               nullable: true
               description: >-
-                Phone number in E.164 format (must start with +).
-                At least one of email or phone_number is required.
+                Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
               example: '+2348012345678'
+        user_id:
+          type: string
+          description: Optional partner-provided user identifier. Must match the token user identifier when both are supplied. If no user identifier is supplied, a TypeID is generated automatically.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
         callback_url:
           type: string
           format: uri
           pattern: '^https://'
           description: >-
-            URL to receive the async result callback. Falls back to partner default if omitted.
-            Must be on the partner's allowed callback domains list.
-            Can be provided via the token payload (bound at /v3/token) instead of the request body.
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: https://example.com/callback
         partner_params:
           type: object
@@ -397,7 +317,6 @@ components:
               value:
                 type: string
                 maxLength: 1000
-
     Consent:
       type: object
       required: [granted, granted_at, notice_language, notice_privacy_policy_url]
@@ -424,7 +343,6 @@ components:
           pattern: '^https://'
           description: HTTPS URL of the privacy policy notice shown to the user.
           example: https://example.com/privacy
-
     AcceptedResponse:
       type: object
       required:
@@ -455,7 +373,6 @@ components:
           format: date-time
           description: ISO 8601 timestamp of when the verification was created.
           example: '2026-03-10T12:00:00.000Z'
-
     ApiErrorResponse:
       type: object
       required:

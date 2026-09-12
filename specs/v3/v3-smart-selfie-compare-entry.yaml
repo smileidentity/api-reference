@@ -12,10 +12,7 @@ info:
   title: V3 Smart Selfie Compare API
   version: '1.0.0'
   description: >-
-    Async smart selfie compare endpoint (Smart Selfie™ Compare).
-    Accepts a selfie image and a comparison image, validates at entry, and queues the job
-    for async processing (passive liveness, face matching, optional active liveness).
-    Returns HTTP 202 with a job_id and user_id to track the result via callback.
+    Async smart selfie compare endpoint (Smart Selfie™ Compare). Accepts a selfie image and a comparison image, validates at entry, and queues the job for async processing (passive liveness, face matching, optional active liveness). Returns HTTP 202 with a job_id and user_id to track the result via callback.
 
     Authentication: token-based (token header from /v3/token).
 
@@ -32,51 +29,10 @@ paths:
       security:
         - SmileIDToken: []
       description: >-
-        Compares a selfie image against a provided comparison image (document, ID photo, or portrait).
-        The images are uploaded, validated at entry, then queued for async ML processing
-        (passive liveness, face matching, optional active liveness with liveness images).
-        Results are delivered via callback URL.
+        Compares a selfie image against a provided comparison image (document, ID photo, or portrait). The images are uploaded, validated at entry, then queued for async ML processing (passive liveness, face matching, optional active liveness with liveness images). Results are delivered via callback URL.
 
         If `user_id` is provided and the comparison passes, the user will be enrolled.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: 'ios'
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: '10.3.1'
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
-          schema:
-            type: string
-            format: date-time
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body.
-          schema:
-            type: string
-        - name: User-ID
-          in: header
-          required: false
-          description: >-
-            Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-          schema:
-            type: string
+      parameters: []
       requestBody:
         required: true
         content:
@@ -171,7 +127,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-
 components:
   securitySchemes:
     SmileIDToken:
@@ -215,8 +170,7 @@ components:
             - required: [email]
             - required: [phone_number]
           description: >-
-            Consumer-stated PII fields for the user.
-            Either email or phone_number must be provided.
+            Consumer-stated PII fields for the user. Either email or phone_number must be provided.
           properties:
             given_names:
               type: string
@@ -246,8 +200,7 @@ components:
             type: string
             format: binary
           description: >-
-            Optional array of JPEG liveness images. If omitted, active liveness check
-            is skipped.
+            Optional array of JPEG liveness images. If omitted, active liveness check is skipped.
         allow_new_enroll:
           type: boolean
           default: false
@@ -282,7 +235,6 @@ components:
               value:
                 type: string
                 maxLength: 1000
-
     Consent:
       type: object
       required: [granted, granted_at, notice_language, notice_privacy_policy_url]
@@ -309,7 +261,6 @@ components:
           pattern: '^https://'
           description: HTTPS URL of the privacy policy notice shown to the user.
           example: https://example.com/privacy
-
     AcceptedResponse:
       type: object
       required:
@@ -340,7 +291,6 @@ components:
           format: date-time
           description: ISO 8601 timestamp of when the verification was created.
           example: '2026-03-10T12:00:00.000Z'
-
     ApiErrorResponse:
       type: object
       required:
