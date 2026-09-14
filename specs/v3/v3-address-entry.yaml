@@ -1,0 +1,380 @@
+openapi: 3.0.3
+servers:
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://api.smileidentity.com
+    description: Production
+info:
+  contact:
+    name: Smile ID Support
+    url: https://docs.usesmileid.com
+    email: support@usesmileid.com
+  title: V3 Address Verification API
+  version: '1.0.0'
+  description: >-
+    Async address verification. Checks an address a user has given you against the
+    address on record with a data provider, and reports how far apart the two are,
+    whether the record is up to date, and whether the name on the record matches.
+
+    Validates at entry, queues the job, and returns HTTP 202 with a job_id and a
+    user_id. The result arrives on your callback URL; you can also poll
+    `GET /v3/status/{job_id}`.
+
+    Authentication: token-based (SmileID-Token header from `POST /v3/token`).
+
+    Supported countries are those with an address data provider: Nigeria (NG) and
+    South Africa (ZA). A Nigerian address is identified by a utility number plus
+    its provider and type; a South African address by an ID number.
+tags:
+  - name: Address Verification
+paths:
+  /v3/address:
+    post:
+      summary: Submit an address verification
+      operationId: v3AddressVerification
+      tags:
+        - Address Verification
+      security:
+        - SmileIDToken: []
+      description: >-
+        Queues an address verification and returns immediately. The job asks the
+        country's address provider for the addresses on record against the
+        identifier you supplied, geocodes them against the address you submitted,
+        and compares the name on the record with the name in `user_details`.
+
+        Outcomes:
+
+        * `clear` — an address on record is within 1km of the one you submitted.
+
+        * `attention` (`information_outdated`) — the address matched, but the
+        Nigerian record behind it is more than six months old.
+
+        * `block` (`address_out_of_range`) — the closest address on record is
+        further than 1km away.
+
+        * `block` (`name_mismatch`) — the name on the record does not match the
+        name you supplied.
+
+        * `block` (`no_address_on_record`) — the provider knows the identifier
+        but holds no address against it.
+
+        * `block` (`identifier_not_found`) — the provider has no record for the
+        ID or utility number.
+
+        * `error` (`service_unavailable`) — the provider could not be reached.
+      parameters:
+        - name: SmileID-Source-SDK
+          in: header
+          required: false
+          description: Source SDK identifier.
+          schema:
+            type: string
+            example: 'rest_api'
+        - name: SmileID-Source-SDK-Version
+          in: header
+          required: false
+          description: Source SDK version.
+          schema:
+            type: string
+            example: '1.0.0'
+        - name: SmileID-Timestamp
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
+          schema:
+            type: string
+            format: date-time
+        - name: SmileID-Request-Signature
+          in: header
+          required: false
+          x-smile-sdk-exclude: true
+          description: >-
+            HMAC signature of the raw HTTP request body.
+          schema:
+            type: string
+        - name: User-ID
+          in: header
+          required: false
+          description: >-
+            Partner-provided user identifier override.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddressVerificationRequest'
+      responses:
+        '202':
+          description: Accepted — job queued for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressAcceptedResponse'
+              example:
+                status: accepted
+                message: Job submitted successfully
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+        '400':
+          description: Bad Request — validation error in the request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingAddress:
+                  summary: Missing address
+                  value:
+                    status: Bad Request
+                    message: "Required field 'address' is missing or invalid."
+                unsupportedCountry:
+                  summary: Country has no address provider
+                  value:
+                    status: Bad Request
+                    message: "Field 'country' must be one of NG, ZA."
+                missingIdentifier:
+                  summary: Neither an id_number nor a utility_number was given
+                  value:
+                    status: Bad Request
+                    message: "Either 'id_number' or 'utility_number' is required."
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: A valid callback_url is required in the request or a default callback URL must be configured in the portal.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '403':
+          description: Forbidden — address verification is not enabled for this partner, or the IP is not allowed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '413':
+          description: Payload Too Large — the request body exceeds the size limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '415':
+          description: Unsupported Media Type — the request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+components:
+  securitySchemes:
+    SmileIDToken:
+      type: apiKey
+      in: header
+      name: SmileID-Token
+      description: JWT token obtained from `POST /v3/token`.
+      x-gitbook-token-placeholder: YOUR_GENERATED_TOKEN
+  schemas:
+    AddressVerificationRequest:
+      type: object
+      required:
+        - address
+        - country
+        - consent
+        - user_details
+      description: >-
+        Either `id_number` or `utility_number` must be present. Nigeria requires
+        `utility_number`, `utility_provider` and `utility_type`; South Africa
+        requires `id_number`.
+      properties:
+        address:
+          type: string
+          minLength: 1
+          maxLength: 512
+          description: The address to verify, as the user gave it to you.
+          example: 12 Test Road, Testville
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          enum: [NG, ZA]
+          description: ISO 3166-1 alpha-2 country code of the address.
+          example: NG
+        id_number:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: >-
+            The national ID number the address is registered against. Required
+            for South Africa.
+          example: '9001015800085'
+        utility_number:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: >-
+            The utility meter or account number the address is registered
+            against. Required for Nigeria.
+          example: '0123456789'
+        utility_provider:
+          type: string
+          description: >-
+            Code of the Nigerian utility provider the utility number belongs to.
+          example: IKEDC
+        utility_type:
+          type: string
+          enum: [PrePaid, PostPaid]
+          description: Whether the Nigerian utility account is prepaid or postpaid.
+          example: PrePaid
+        consent:
+          $ref: '#/components/schemas/Consent'
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required: [email]
+            - required: [phone_number]
+          description: >-
+            Consumer-stated PII fields for the user. The given names and last
+            name are the name compared against the name on the provider's record.
+            Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              example: Amina
+            last_name:
+              type: string
+              minLength: 1
+              example: Clearwater
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: At least one of email or phone_number is required.
+              example: amina@example.com
+            phone_number:
+              type: string
+              pattern: '^\+[1-9]\d{6,14}$'
+              nullable: true
+              description: Phone number in E.164 format. At least one of email or phone_number is required.
+              example: '+2348012345678'
+        user_id:
+          type: string
+          description: >-
+            Your own identifier for the user. Minted for you when omitted.
+          example: user_addr_001
+        callback_url:
+          type: string
+          format: uri
+          pattern: '^https://'
+          description: URL to receive the async result callback.
+          example: https://example.com/callback
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+        metadata:
+          type: array
+          items:
+            type: object
+            required: [name, value]
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+
+    AddressAcceptedResponse:
+      type: object
+      required:
+        - status
+        - message
+        - job_id
+        - user_id
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+          description: Acceptance status for the queued verification request.
+        message:
+          type: string
+          enum: ['Job submitted successfully']
+          description: Human-readable acceptance message.
+        job_id:
+          type: string
+          description: TypeID format verification identifier for tracking.
+          example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+        user_id:
+          type: string
+          description: TypeID format user identifier, or the reconciled partner-provided user identifier.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+
+    Consent:
+      type: object
+      required:
+        - granted
+        - granted_at
+        - notice_language
+        - notice_privacy_policy_url
+      properties:
+        granted:
+          type: boolean
+          enum: [true]
+          description: Must be true; user has granted consent.
+        granted_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when consent was granted.
+          example: '2026-03-06T12:00:00.000Z'
+        notice_language:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: '^[A-Z]{2}$'
+          description: ISO 639-1 language code of the privacy notice shown, uppercase.
+          example: EN
+        notice_privacy_policy_url:
+          type: string
+          format: uri
+          pattern: '^https://'
+          description: HTTPS URL of the privacy policy notice shown to the user.
+          example: https://example.com/privacy
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          description: HTTP status text.
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable error message.
+          example: Invalid request.
