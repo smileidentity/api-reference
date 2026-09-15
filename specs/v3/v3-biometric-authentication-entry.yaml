@@ -12,15 +12,11 @@ info:
   title: V3 Biometric Authentication API
   version: '1.0.0'
   description: >-
-    Async biometric authentication endpoint (Smart Selfie™ Authentication).
-    Accepts a selfie image and liveness images, validates at entry, and queues the job
-    for async processing. The selfie is compared against the user's previously enrolled image.
-    Returns HTTP 202 with a job_id and user_id to track the result via callback.
+    Async biometric authentication endpoint (Smart Selfie™ Authentication). Accepts a selfie image and liveness images, validates at entry, and queues the job for async processing. The selfie is compared against the user's previously enrolled image. Returns HTTP 202 with a job_id and user_id to track the result via callback.
 
     Authentication: token-based (token header from /v3/token).
 
-    At least one of `email` or `phone_number` is required. The `user_id` field is required
-    and must match an existing enrolled user.
+    At least one of `email` or `phone_number` is required. The `user_id` field is required and must match an existing enrolled user.
 tags:
   - name: Biometric Authentication
 paths:
@@ -33,52 +29,10 @@ paths:
       security:
         - SmileIDToken: []
       description: >-
-        Authenticates a user by comparing a submitted selfie against their enrolled image.
-        The selfie and liveness images are uploaded, validated at entry, then queued for
-        async ML processing (passive liveness, active liveness, face matching).
-        Results are delivered via callback URL.
+        Authenticates a user by comparing a submitted selfie against their enrolled image. The selfie and liveness images are uploaded, validated at entry, then queued for async ML processing (passive liveness, active liveness, face matching). Results are delivered via callback URL.
 
-        Supports `use_enrolled_image: true` to skip selfie/liveness upload and re-use the
-        enrolled image for the comparison (useful for server-side re-verification).
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: 'android'
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: '10.4.2'
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
-          schema:
-            type: string
-            format: date-time
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body.
-          schema:
-            type: string
-        - name: User-ID
-          in: header
-          required: false
-          description: >-
-            Partner-provided user identifier override.
-          schema:
-            type: string
+        Supports `use_enrolled_image: true` to skip selfie/liveness upload and re-use the enrolled image for the comparison (useful for server-side re-verification).
+      parameters: []
       requestBody:
         required: true
         content:
@@ -161,7 +115,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
-
 components:
   securitySchemes:
     SmileIDToken:
@@ -215,8 +168,7 @@ components:
             - required: [email]
             - required: [phone_number]
           description: >-
-            Consumer-stated PII fields for the user.
-            Either email or phone_number must be provided.
+            Consumer-stated PII fields for the user. Either email or phone_number must be provided.
           properties:
             given_names:
               type: string
@@ -242,8 +194,7 @@ components:
           type: boolean
           default: false
           description: >-
-            If true, skips selfie and liveness image upload and uses the enrolled image
-            for re-verification. Useful for server-side re-authentication.
+            If true, skips selfie and liveness image upload and uses the enrolled image for re-verification. Useful for server-side re-authentication.
         callback_url:
           type: string
           format: uri
@@ -269,7 +220,6 @@ components:
               value:
                 type: string
                 maxLength: 1000
-
     Consent:
       type: object
       required: [granted, granted_at, notice_language, notice_privacy_policy_url]
@@ -296,7 +246,6 @@ components:
           pattern: '^https://'
           description: HTTPS URL of the privacy policy notice shown to the user.
           example: https://example.com/privacy
-
     AcceptedResponse:
       type: object
       required:
@@ -327,7 +276,6 @@ components:
           format: date-time
           description: ISO 8601 timestamp of when the verification was created.
           example: '2026-03-10T12:00:00.000Z'
-
     ApiErrorResponse:
       type: object
       required:

@@ -8,29 +8,15 @@ info:
   title: V3 One-Time AML API
   version: '1.1.0'
   description: >-
-    One-Time AML endpoints. Screen a full name against sanctions, PEP, and
-    adverse-media lists (job type 15).
+    One-Time AML endpoints. Screen a full name against sanctions, PEP, and adverse-media lists (job type 15).
 
-    Two endpoints run the same screening and differ only in how you receive the
-    result. `POST /v3/aml` validates at entry, processes asynchronously, and
-    returns HTTP 202 with a job_id and user_id, delivering the result to your
-    callback URL. `POST /v3/aml/sync` performs the screening inline and returns
-    that same result in the response body, for partners who would rather not
-    host a public webhook endpoint; it sends no callback and takes longer to
-    respond.
+    Two endpoints run the same screening and differ only in how you receive the result. `POST /v3/aml` validates at entry, processes asynchronously, and returns HTTP 202 with a job_id and user_id, delivering the result to your callback URL. `POST /v3/aml/sync` performs the screening inline and returns that same result in the response body, for partners who would rather not host a public webhook endpoint; it sends no callback and takes longer to respond.
 
-    Authentication: standard V3 token (SmileID-Token header from /v3/token) or
-    V3 HMAC request signature (SmileID-Timestamp + SmileID-Request-Signature
-    headers). There is no token-only restriction.
+    Authentication: standard V3 token (SmileID-Token header from /v3/token) or V3 HMAC request signature (SmileID-Timestamp + SmileID-Request-Signature headers). There is no token-only restriction.
 
-    This is distinct from ongoing AML monitoring (job type 10,
-    `SmileProduct.AML`), which now lives at `POST /v3/aml/monitoring` — see
-    the V3 AML Monitoring API spec.
+    This is distinct from ongoing AML monitoring (job type 10, `SmileProduct.AML`), which now lives at `POST /v3/aml/monitoring` — see the V3 AML Monitoring API spec.
 
-    A submitted screening can also be tracked with the generic V3 endpoints:
-    `GET /v3/status/{jobId}` (see the V3 Verification Status API) and
-    `POST /v3/replay/{job_id}` (see the V3 Replay Callback API) both work with
-    One-Time AML jobs the same way as any other V3 product.
+    A submitted screening can also be tracked with the generic V3 endpoints: `GET /v3/status/{jobId}` (see the V3 Verification Status API) and `POST /v3/replay/{job_id}` (see the V3 Replay Callback API) both work with One-Time AML jobs the same way as any other V3 product.
 paths:
   /v3/aml:
     post:
@@ -41,68 +27,12 @@ paths:
         - SmileIDToken: []
       summary: Submit One-Time AML screening
       description: >-
-        Screens the supplied full name (and optional aliases/birth year)
-        against sanctions, PEP, and adverse-media lists for the given
-        countries. Results are delivered asynchronously via callback URL. No
-        human review is performed — the callback carries a terminal outcome.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: 'android'
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: '10.4.2'
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
-            Required when your Smile ID account is configured to use SDK/partner secret HMAC
-            authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret
-            and the value of SmileID-Timestamp as salt. Required when your Smile ID
-            account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: '4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2'
-        - name: User-ID
-          in: header
-          required: false
-          description: >-
-            Partner-provided user identifier. Must agree with body `user_id` and any
-            token-bound user id — disagreement is a 403. If omitted everywhere, a TypeID
-            is generated automatically.
-          schema:
-            type: string
+        Screens the supplied full name (and optional aliases/birth year) against sanctions, PEP, and adverse-media lists for the given countries. Results are delivered asynchronously via callback URL. No human review is performed — the callback carries a terminal outcome.
+      parameters: []
       requestBody:
         required: true
         description: >-
-          Sent as multipart/form-data. Scalar fields (full_name, birth_year,
-          strict_match, search_existing_user, user_id, source_sdk,
-          source_sdk_version) are plain form fields. Non-scalar fields must be
-          sent as JSON-encoded strings in their form part: the array fields
-          countries and aliases (e.g. countries='["NG","KE"]') and the object
-          fields consent, user_details, metadata, and partner_params. Multipart
-          has no native array encoding, so a bare or repeated countries field is
-          rejected — it must be a JSON array string.
+          Sent as multipart/form-data. Scalar fields (full_name, birth_year, strict_match, search_existing_user, user_id, source_sdk, source_sdk_version) are plain form fields. Non-scalar fields must be sent as JSON-encoded strings in their form part: the array fields countries and aliases (e.g. countries='["NG","KE"]') and the object fields consent, user_details, metadata, and partner_params. Multipart has no native array encoding, so a bare or repeated countries field is rejected — it must be a JSON array string.
         content:
           multipart/form-data:
             schema:
@@ -233,8 +163,7 @@ paths:
                     message: SDK version not allowed.
         '404':
           description: >-
-            Not Found — `search_existing_user` was true but no matching enrollee or usable
-            prior record was found.
+            Not Found — `search_existing_user` was true but no matching enrollee or usable prior record was found.
           content:
             application/json:
               schema:
@@ -292,9 +221,7 @@ paths:
             post:
               summary: One-Time AML result callback
               description: >-
-                Sent once the screening reaches a terminal state (clear, block, attention, or
-                error). The same body is returned by `GET /v3/status/{jobId}`-driven polling
-                flows that reconstruct the result, and by `POST /v3/replay/{job_id}`.
+                Sent once the screening reaches a terminal state (clear, block, attention, or error). The same body is returned by `GET /v3/status/{jobId}`-driven polling flows that reconstruct the result, and by `POST /v3/replay/{job_id}`.
               requestBody:
                 required: true
                 content:
@@ -458,111 +385,30 @@ paths:
         - SmileIDToken: []
       summary: Submit One-Time AML screening and receive the result inline
       description: >-
-        Synchronous counterpart to `POST /v3/aml`. Runs the same One-Time AML
-        screening (job type 15) and returns the terminal result in the response
-        body instead of delivering it to a callback URL, so a verification can
-        be completed in a single request without hosting a public webhook
-        endpoint.
+        Synchronous counterpart to `POST /v3/aml`. Runs the same One-Time AML screening (job type 15) and returns the terminal result in the response body instead of delivering it to a callback URL, so a verification can be completed in a single request without hosting a public webhook endpoint.
 
-        The request body and every entry validation are identical to the async
-        endpoint, with one exception: `callback_url` is optional here. If you do
-        supply one it is stored so `POST /v3/replay/{job_id}` can use it later,
-        but no webhook is ever sent — the result is in this response.
+        The request body and every entry validation are identical to the async endpoint, with one exception: `callback_url` is optional here. If you do supply one it is stored so `POST /v3/replay/{job_id}` can use it later, but no webhook is ever sent — the result is in this response.
 
-        The 200 body is exactly the payload the async callback would have
-        delivered, so a partner can move between the two endpoints without
-        changing how they parse a result.
+        The 200 body is exactly the payload the async callback would have delivered, so a partner can move between the two endpoints without changing how they parse a result.
 
-        The response carries `Response-Signature` and `Response-Timestamp`,
-        computed the same way as on our webhooks, so existing signature
-        verification applies unchanged.
+        The response carries `Response-Signature` and `Response-Timestamp`, computed the same way as on our webhooks, so existing signature verification applies unchanged.
 
-        Screening is performed inline against the provider, so this endpoint is
-        slower than the async one and is bounded by a request deadline. If the
-        provider does not answer within it, the response is a 408 and no charge
-        is made.
+        Screening is performed inline against the provider, so this endpoint is slower than the async one and is bounded by a request deadline. If the provider does not answer within it, the response is a 408 and no charge is made.
 
-        Every response returned after the job is created carries a
-        `SmileID-Job-ID` header, and a completed screening can always be read
-        back from `GET /v3/status/{jobId}` — so if you have a job id, read it
-        rather than resubmitting. If you do not (a network failure, or the
-        gateway timing the request out on its own), resubmit with the same
-        `SmileID-Idempotency-Key`: the retry resolves to the same job and returns
-        the original result instead of running a second, separately billed
-        screening.
+        Every response returned after the job is created carries a `SmileID-Job-ID` header, and a completed screening can always be read back from `GET /v3/status/{jobId}` — so if you have a job id, read it rather than resubmitting. If you do not (a network failure, or the gateway timing the request out on its own), resubmit with the same `SmileID-Idempotency-Key`: the retry resolves to the same job and returns the original result instead of running a second, separately billed screening.
       parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: 'android'
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: '10.4.2'
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
-            Required when your Smile ID account is configured to use SDK/partner secret HMAC
-            authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret
-            and the value of SmileID-Timestamp as salt. Required when your Smile ID
-            account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: '4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2'
-        - name: User-ID
-          in: header
-          required: false
-          description: >-
-            Partner-provided user identifier. Must agree with body `user_id` and any
-            token-bound user id — disagreement is a 403. If omitted everywhere, a TypeID
-            is generated automatically.
-          schema:
-            type: string
         - name: SmileID-Idempotency-Key
           in: header
           required: false
           description: >-
-            Opaque key, 16 to 128 characters of `A-Z a-z 0-9 - _`, that makes a
-            submission safe to repeat. The job id is derived from it, so a request
-            carrying a key you have already used resolves to that same job: it
-            returns the original result and screens — and bills — nothing a second
-            time. Send one whenever you might retry, since a retry without a key
-            starts a new, separately billed screening.
+            Opaque key, 16 to 128 characters of `A-Z a-z 0-9 - _`, that makes a submission safe to repeat. The job id is derived from it, so a request carrying a key you have already used resolves to that same job: it returns the original result and screens — and bills — nothing a second time. Send one whenever you might retry, since a retry without a key starts a new, separately billed screening.
           schema:
             type: string
             example: kuda-onboarding-8f14e45fceea167a
       requestBody:
         required: true
         description: >-
-          Identical to `POST /v3/aml`, except that `callback_url` is optional
-          because no callback is sent. Sent as multipart/form-data. Scalar
-          fields (full_name, birth_year, strict_match, search_existing_user,
-          user_id, source_sdk, source_sdk_version) are plain form fields.
-          Non-scalar fields must be sent as JSON-encoded strings in their form
-          part: the array fields countries and aliases (e.g.
-          countries='["NG","KE"]') and the object fields consent, user_details,
-          metadata, and partner_params. Multipart has no native array encoding,
-          so a bare or repeated countries field is rejected — it must be a JSON
-          array string.
+          Identical to `POST /v3/aml`, except that `callback_url` is optional because no callback is sent. Sent as multipart/form-data. Scalar fields (full_name, birth_year, strict_match, search_existing_user, user_id, source_sdk, source_sdk_version) are plain form fields. Non-scalar fields must be sent as JSON-encoded strings in their form part: the array fields countries and aliases (e.g. countries='["NG","KE"]') and the object fields consent, user_details, metadata, and partner_params. Multipart has no native array encoding, so a bare or repeated countries field is rejected — it must be a JSON array string.
         content:
           multipart/form-data:
             schema:
@@ -570,14 +416,11 @@ paths:
       responses:
         '200':
           description: >-
-            Screening completed. The body is the terminal result — the same
-            payload the async callback would have delivered.
+            Screening completed. The body is the terminal result — the same payload the async callback would have delivered.
           headers:
             Response-Signature:
               description: >-
-                Signature over Response-Timestamp and your partner id, keyed with your API
-                key. Identical in construction to the signature we send on webhooks, so
-                existing verification code applies unchanged.
+                Signature over Response-Timestamp and your partner id, keyed with your API key. Identical in construction to the signature we send on webhooks, so existing verification code applies unchanged.
               schema:
                 type: string
                 example: 'Zm9vYmFyYmF6cXV4MTIzNDU2Nzg5MGFiY2RlZmdoaWo='
@@ -761,8 +604,7 @@ paths:
                 message: You are out of credits. Add funds to your wallet to run more verifications.
         '403':
           description: >-
-            Forbidden — product not enabled, IP not allowlisted, production access
-            not granted, or a user id conflict between body, header, and token.
+            Forbidden — product not enabled, IP not allowlisted, production access not granted, or a user id conflict between body, header, and token.
           content:
             application/json:
               schema:
@@ -780,8 +622,7 @@ paths:
                     message: You are not authorized to do that.
         '404':
           description: >-
-            Not Found — `search_existing_user` was true but no usable prior record
-            exists for this user.
+            Not Found — `search_existing_user` was true but no usable prior record exists for this user.
           content:
             application/json:
               schema:
@@ -799,11 +640,7 @@ paths:
                     message: No prior KYC record with a usable name and country was found for this user.
         '408':
           description: >-
-            Request Timeout — the screening provider did not answer within the
-            request deadline, so no result was produced and nothing is billed. The
-            job exists and is terminal in `error`, so `GET /v3/status/{jobId}` will
-            only ever return that error: resubmit rather than poll. Send
-            `SmileID-Idempotency-Key` to make the resubmission safe to repeat.
+            Request Timeout — the screening provider did not answer within the request deadline, so no result was produced and nothing is billed. The job exists and is terminal in `error`, so `GET /v3/status/{jobId}` will only ever return that error: resubmit rather than poll. Send `SmileID-Idempotency-Key` to make the resubmission safe to repeat.
           headers:
             SmileID-Job-ID:
               description: The Smile job id to poll for this screening.
@@ -817,8 +654,7 @@ paths:
               example:
                 status: Request Timeout
                 message: >-
-                  The screening provider did not respond in time. The job is still recorded —
-                  retrieve its result from /v3/status/{job_id}.
+                  The screening provider did not respond in time. The job is still recorded — retrieve its result from /v3/status/{job_id}.
         '413':
           description: Content Too Large — the request payload exceeds the size limit.
           content:
@@ -848,15 +684,11 @@ paths:
                 message: Rate limit exceeded. Please try again later.
         '500':
           description: >-
-            Internal Server Error. A screening that could not be completed for an
-            internal reason is reported here rather than as a 200 carrying
-            `status: error`. As with a 408, the job exists and its outcome can be
-            read from `GET /v3/status/{jobId}`.
+            Internal Server Error. A screening that could not be completed for an internal reason is reported here rather than as a 200 carrying `status: error`. As with a 408, the job exists and its outcome can be read from `GET /v3/status/{jobId}`.
           headers:
             SmileID-Job-ID:
               description: >-
-                The Smile job id to poll for this screening. Present when the failure
-                happened after the job was created.
+                The Smile job id to poll for this screening. Present when the failure happened after the job was created.
               schema:
                 type: string
                 example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
@@ -889,10 +721,7 @@ components:
           minLength: 1
           nullable: true
           description: >-
-            Partner-provided user identifier. Optional in general; required when
-            `search_existing_user` is `true`. Reconciled with the `User-ID` header and any
-            token-bound user id after authentication — disagreement is a 403. Generated
-            automatically as a TypeID when omitted everywhere.
+            Partner-provided user identifier. Optional in general; required when `search_existing_user` is `true`. Reconciled with the `User-ID` header and any token-bound user id after authentication — disagreement is a 403. Generated automatically as a TypeID when omitted everywhere.
           example: 'user-1234'
         countries:
           type: array
@@ -902,34 +731,26 @@ components:
             minLength: 2
             maxLength: 2
           description: >-
-            ISO 3166-1 alpha-2 country codes (uppercase) to screen against. Remains
-            authoritative for the screening even when `search_existing_user` is `true`.
-            Sent as a JSON-encoded array string in the multipart part (e.g. `["NG","KE"]`).
+            ISO 3166-1 alpha-2 country codes (uppercase) to screen against. Remains authoritative for the screening even when `search_existing_user` is `true`. Sent as a JSON-encoded array string in the multipart part (e.g. `["NG","KE"]`).
           example: ['NG', 'KE']
         full_name:
           type: string
           minLength: 1
           description: >-
-            Full name to screen. Remains authoritative for the screening — never replaced
-            or compared with prior enrollee information, even when `search_existing_user`
-            is `true`.
+            Full name to screen. Remains authoritative for the screening — never replaced or compared with prior enrollee information, even when `search_existing_user` is `true`.
           example: 'John Doe'
         birth_year:
           type: string
           pattern: '^\d{4}$'
           nullable: true
           description: >-
-            Optional four-digit birth year, minimum 1000 and maximum the current UTC year.
-            A bare integer is also accepted. Full dates, decimals, non-four-digit values,
-            and future years are rejected.
+            Optional four-digit birth year, minimum 1000 and maximum the current UTC year. A bare integer is also accepted. Full dates, decimals, non-four-digit values, and future years are rejected.
           example: '1990'
         strict_match:
           type: boolean
           default: true
           description: >-
-            Optional. When `true` (default), uses the stricter match filter set; when
-            `false`, uses a looser filter set. Accepts standard multipart boolean string
-            representations (`"true"`/`"false"`). Always echoed back on the callback.
+            Optional. When `true` (default), uses the stricter match filter set; when `false`, uses a looser filter set. Accepts standard multipart boolean string representations (`"true"`/`"false"`). Always echoed back on the callback.
         aliases:
           type: array
           maxItems: 20
@@ -938,19 +759,13 @@ components:
             minLength: 1
             maxLength: 256
           description: >-
-            Optional list of alternate names to screen, at most 20 entries, each at most
-            256 characters. Sent as a JSON-encoded array string in the multipart part
-            (e.g. `["Johnny Doe"]`).
+            Optional list of alternate names to screen, at most 20 entries, each at most 256 characters. Sent as a JSON-encoded array string in the multipart part (e.g. `["Johnny Doe"]`).
           example: ['Johnny Doe']
         search_existing_user:
           type: boolean
           default: false
           description: >-
-            Optional. A gate, not a data source: when `true`, requires the resolved
-            `user_id` to belong to a partner-scoped, non-deleted enrollee with at least one
-            non-expired prior KYC record carrying a usable name and country. It never
-            overwrites `full_name`, `countries`, or `birth_year` — those stay authoritative.
-            Accepts standard multipart boolean string representations.
+            Optional. A gate, not a data source: when `true`, requires the resolved `user_id` to belong to a partner-scoped, non-deleted enrollee with at least one non-expired prior KYC record carrying a usable name and country. It never overwrites `full_name`, `countries`, or `birth_year` — those stay authoritative. Accepts standard multipart boolean string representations.
         consent:
           $ref: '#/components/schemas/Consent'
         user_details:
@@ -962,8 +777,7 @@ components:
             - required: [email]
             - required: [phone_number]
           description: >-
-            Consumer-stated PII fields for the screened user.
-            Either email or phone_number must be provided.
+            Consumer-stated PII fields for the screened user. Either email or phone_number must be provided.
           properties:
             given_names:
               type: string
@@ -993,8 +807,7 @@ components:
           format: uri
           pattern: '^https://'
           description: >-
-            URL to receive the async result callback. Falls back to partner default if omitted.
-            Must be on the partner's allowed callback domains list.
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list.
           example: https://example.com/callback
         partner_params:
           type: object
@@ -1056,7 +869,6 @@ components:
           pattern: '^https://'
           description: HTTPS URL of the privacy policy notice shown to the user.
           example: https://example.com/privacy
-
     OneTimeAmlAcceptedResponse:
       type: object
       required:
@@ -1081,12 +893,10 @@ components:
           type: string
           description: TypeID format user identifier, or the reconciled partner-provided user identifier.
           example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
-
     AmlPersonMatch:
       type: object
       description: >-
-        A single sanctions/PEP/adverse-media hit. Public snake_case fields only — internal
-        provider references (e.g. sigma_ref) are always stripped before the callback is sent.
+        A single sanctions/PEP/adverse-media hit. Public snake_case fields only — internal provider references (e.g. sigma_ref) are always stripped before the callback is sent.
       additionalProperties: true
       properties:
         name:
@@ -1098,10 +908,7 @@ components:
             additionalProperties: true
         news_summary:
           description: >-
-            Per-category summary of the person's news-media exposure. The raw
-            article list the provider returns under `adverse_media` is never
-            included in the callback; a screening whose only hits are news media
-            resolves to `attention` / `news_media_match`.
+            Per-category summary of the person's news-media exposure. The raw article list the provider returns under `adverse_media` is never included in the callback; a screening whose only hits are news media resolves to `attention` / `news_media_match`.
           type: array
           items:
             type: object
@@ -1157,7 +964,6 @@ components:
               items:
                 type: object
                 additionalProperties: true
-
     OneTimeAmlCallback:
       type: object
       required:
@@ -1198,8 +1004,7 @@ components:
           type: string
           format: date-time
           description: >-
-            ISO 8601 timestamp the terminal outcome was reached. Omitted only if the terminal
-            state could not be read.
+            ISO 8601 timestamp the terminal outcome was reached. Omitted only if the terminal state could not be read.
         product:
           type: string
           enum: [one_time_aml]
@@ -1209,14 +1014,12 @@ components:
           additionalProperties:
             type: string
           description: >-
-            Partner-supplied key-value metadata, with internal transport keys
-            (`_sandbox_v3`, `job_id`, `job_type`, `user_id`) stripped. `null` when empty.
+            Partner-supplied key-value metadata, with internal transport keys (`_sandbox_v3`, `job_id`, `job_type`, `user_id`) stripped. `null` when empty.
         kyc_receipt:
           type: string
           nullable: true
           description: >-
-            Signed receipt URL. `null` on submission; populated for `clear`, `block`, and
-            `attention` outcomes. Remains `null` for `error`.
+            Signed receipt URL. `null` on submission; populated for `clear`, `block`, and `attention` outcomes. Remains `null` for `error`.
         strict_match:
           type: boolean
           description: The resolved `strict_match` value used for the screening.
@@ -1261,9 +1064,7 @@ components:
           nullable: true
           additionalProperties: true
           description: >-
-            Device/network signals captured at submission time. Always `null` for an `error`
-            outcome, and best-effort `null` when no metadata was captured.
-
+            Device/network signals captured at submission time. Always `null` for an `error` outcome, and best-effort `null` when no metadata was captured.
     ApiErrorResponse:
       type: object
       required:

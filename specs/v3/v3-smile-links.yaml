@@ -26,7 +26,6 @@ info:
     carrying a `product` claim is rejected with the standard authentication
     error (`401`). The request IP must also pass the partner's IP allowlist
     (when configured) and must not appear on the IP blocklist.
-
 components:
   securitySchemes:
     SmileIDToken:
@@ -35,7 +34,6 @@ components:
       name: SmileID-Token
       description: JWT token obtained from `POST /v3/token`.
       x-gitbook-token-placeholder: YOUR_GENERATED_TOKEN
-
   schemas:
     SmileLinkIdType:
       type: object
@@ -57,7 +55,6 @@ components:
           description: The verification product to run for this ID type.
           example: enhanced_kyc
       additionalProperties: false
-
     SmileLinkResource:
       type: object
       required:
@@ -114,7 +111,6 @@ components:
             provided). Null on multi-use links — each opener gets its own user
             id at link-open.
       additionalProperties: true
-
     SmileLinkCreated:
       type: object
       required:
@@ -143,7 +139,6 @@ components:
             provided). Null on multi-use links — each opener gets its own user
             id at link-open.
       additionalProperties: false
-
     ApiErrorResponse:
       type: object
       required:
@@ -158,10 +153,8 @@ components:
           type: string
           description: Human-readable error message.
           example: Invalid request.
-
 security:
   - SmileIDToken: []
-
 tags:
   - name: Smile Links
 paths:
@@ -237,14 +230,14 @@ paths:
               multiUse:
                 summary: Reusable link
                 value:
-                  id_types: [{ country: NG, id_type: NIN, verification_method: enhanced_kyc }]
+                  id_types: [{country: NG, id_type: NIN, verification_method: enhanced_kyc}]
                   name: Onboarding
                   notice_privacy_policy_url: https://partner.example/privacy
                   is_single_use: false
               singleUse:
                 summary: Single-use link for one person
                 value:
-                  id_types: [{ country: NG, id_type: NIN, verification_method: biometric_kyc }]
+                  id_types: [{country: NG, id_type: NIN, verification_method: biometric_kyc}]
                   name: KYC for Ada
                   notice_privacy_policy_url: https://partner.example/privacy
                   is_single_use: true
@@ -326,7 +319,6 @@ paths:
               example:
                 message: An error occurred while generating the link. Please try again!
                 status: Internal Server Error
-
   /v3/smile_links/{refId}:
     get:
       operationId: getSmileLink

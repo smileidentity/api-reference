@@ -17,7 +17,6 @@ info:
 
     Most endpoints do not require authentication. The `GET /v3/services/id_status` endpoint
     requires a JWT token passed in the `SmileID-Token` header.
-
 components:
   parameters:
     CountryFilter:
@@ -31,7 +30,6 @@ components:
         type: string
         pattern: '^[A-Z]{2}$'
         example: NG
-
   securitySchemes:
     SmileIDToken:
       type: apiKey
@@ -39,7 +37,6 @@ components:
       name: SmileID-Token
       description: JWT token obtained from `POST /v3/token`.
       x-gitbook-token-placeholder: YOUR_GENERATED_TOKEN
-
   schemas:
     BankCode:
       type: object
@@ -60,7 +57,6 @@ components:
           type: string
           description: Human-readable bank name.
           example: Access Bank
-
     BankCodesResponse:
       type: object
       properties:
@@ -68,7 +64,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BankCode'
-
     SupportedIdType:
       type: object
       required:
@@ -112,7 +107,6 @@ components:
           type: string
           description: Machine-readable ID type code.
           example: BVN
-
     SupportedIdTypesResponse:
       type: object
       properties:
@@ -120,7 +114,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SupportedIdType'
-
     Country:
       type: object
       properties:
@@ -136,7 +129,6 @@ components:
           type: string
           description: Continent name.
           example: AFRICA
-
     IDType:
       type: object
       properties:
@@ -157,7 +149,6 @@ components:
           type: boolean
           description: Whether this document type has a back side that should be captured.
           example: true
-
     SupportedDocument:
       type: object
       properties:
@@ -167,7 +158,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/IDType'
-
     SupportedDocumentsResponse:
       type: object
       required:
@@ -177,7 +167,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SupportedDocument'
-
     IdStatusResponse:
       type: object
       required:
@@ -209,7 +198,6 @@ components:
           type: string
           description: Success rate of the most recent individual check as a percentage.
           example: '90%'
-
     ServiceErrorResponse:
       type: object
       required:
@@ -222,7 +210,6 @@ components:
         code:
           type: string
           description: Smile Identity error code.
-
     IdStatusErrorResponse:
       type: object
       required:
@@ -235,7 +222,6 @@ components:
         status:
           type: string
           description: HTTP status text (e.g. "Bad Request", "Unauthorized").
-
 tags:
   - name: Services
 paths:
@@ -275,7 +261,6 @@ paths:
               example:
                 error: You are not authorized to do that.
                 code: '2413'
-
   /v3/services/supported_id_types:
     get:
       operationId: getSupportedIdTypes
@@ -323,7 +308,6 @@ paths:
               example:
                 error: You are not authorized to do that.
                 code: '2413'
-
   /v3/services/supported_documents:
     get:
       operationId: getSupportedDocuments
@@ -408,8 +392,7 @@ paths:
                 $ref: '#/components/schemas/ServiceErrorResponse'
               example:
                 error: >-
-                  Country Code must be a valid ISO 3166-1 alpha-2 country code
-                  consisting of exactly two uppercase letters.
+                  Country Code must be a valid ISO 3166-1 alpha-2 country code consisting of exactly two uppercase letters.
                 code: '2413'
         '500':
           description: Internal server error.
@@ -420,7 +403,6 @@ paths:
               example:
                 error: System Error
                 code: '2401'
-
   /v3/services/id_status:
     get:
       operationId: getIdStatus
