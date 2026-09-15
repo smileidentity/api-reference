@@ -14,16 +14,25 @@ info:
   description: >-
     Re-sends a callback webhook for a completed verification so the partner receives it again.
 
-    This is a generic endpoint that works for any V3 product — the product is
-    inferred from the original verification.
+    This is a generic endpoint that works for any V3 product — the product is inferred from the original verification.
 
     Authentication: token-based (SmileID-Token header with JWT from /v3/token).
 
     Callback URL resolution order:
+
+
+
+
+
+
+
+
+
+
+
       1. `callback_url` from request body (validated against partner's allowed domains)
       2. `callback_url` stored with the original verification
       3. Partner's default callback URL
-
 tags:
   - name: Callback Replay
 paths:
@@ -36,13 +45,9 @@ paths:
         - SmileIDToken: []
       summary: Replay a callback for a completed verification
       description: >-
-        Looks up a previously completed verification by its TypeID, resolves the callback
-        URL, and re-sends the callback. The verification must have reached a
-        terminal state (clear, block, attention, or error) before its callback
-        can be replayed.
+        Looks up a previously completed verification by its TypeID, resolves the callback URL, and re-sends the callback. The verification must have reached a terminal state (clear, block, attention, or error) before its callback can be replayed.
 
-        An optional `callback_url` in the request body overrides the stored URL,
-        subject to the partner's callback domain allowlist.
+        An optional `callback_url` in the request body overrides the stored URL, subject to the partner's callback domain allowlist.
       parameters:
         - name: job_id
           in: path
@@ -55,12 +60,9 @@ paths:
       requestBody:
         required: false
         description: >-
-          Optional body to override the callback URL. If omitted, the stored
-          callback URL (from the original verification or partner default)
-          is used.
+          Optional body to override the callback URL. If omitted, the stored callback URL (from the original verification or partner default) is used.
 
-          Send the body as `multipart/form-data`. Any other content type is
-          rejected with 415.
+          Send the body as `multipart/form-data`. Any other content type is rejected with 415.
         content:
           multipart/form-data:
             schema:
@@ -81,8 +83,7 @@ paths:
                 message: Callback replay queued successfully.
         '400':
           description: >-
-            Bad Request — invalid job_id format, unrecognised product, or no
-            valid callback URL available.
+            Bad Request — invalid job_id format, unrecognised product, or no valid callback URL available.
           content:
             application/json:
               schema:
@@ -114,8 +115,7 @@ paths:
                 message: Invalid authentication credentials.
         '403':
           description: >-
-            Forbidden — IP not in allowlist, callback URL not in allowed domains,
-            or security checks failed.
+            Forbidden — IP not in allowlist, callback URL not in allowed domains, or security checks failed.
           content:
             application/json:
               schema:
@@ -125,8 +125,7 @@ paths:
                 message: You are not authorized to do that.
         '404':
           description: >-
-            Not Found — verification does not exist, does not belong to this partner, or
-            has no reference entry.
+            Not Found — verification does not exist, does not belong to this partner, or has no reference entry.
           content:
             application/json:
               schema:
@@ -144,8 +143,7 @@ paths:
                     message: Reference not found for this job
         '409':
           description: >-
-            Conflict — verification has not yet reached a terminal state. Wait for
-            processing to complete before replaying the callback.
+            Conflict — verification has not yet reached a terminal state. Wait for processing to complete before replaying the callback.
           content:
             application/json:
               schema:
@@ -153,12 +151,10 @@ paths:
               example:
                 status: Conflict
                 message: >-
-                  Job is still processing. Callbacks can only be replayed for
-                  completed jobs.
+                  Job is still processing. Callbacks can only be replayed for completed jobs.
         '415':
           description: >-
-            Unsupported Media Type — a body was sent with a `Content-Type` other
-            than `multipart/form-data`.
+            Unsupported Media Type — a body was sent with a `Content-Type` other than `multipart/form-data`.
           content:
             application/json:
               schema:
@@ -175,7 +171,6 @@ paths:
               example:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
-
 components:
   securitySchemes:
     SmileIDToken:
@@ -193,9 +188,7 @@ components:
           format: uri
           pattern: '^https://'
           description: >-
-            Override callback URL. Must be on the partner's callback domain
-            allowlist. If omitted, the stored callback URL is used.
-            Can also be provided via the token payload (see /v3/token).
+            Override callback URL. Must be on the partner's callback domain allowlist. If omitted, the stored callback URL is used. Can also be provided via the token payload (see /v3/token).
           example: 'https://partner.example.com/webhook'
     ReplayCallbackResponse:
       type: object

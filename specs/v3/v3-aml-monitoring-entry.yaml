@@ -12,21 +12,13 @@ info:
   title: V3 AML Monitoring Entry API
   version: '1.0.0'
   description: >-
-    Async AML (Anti-Money Laundering) Monitoring endpoint. Screens an individual
-    against global sanctions, PEP, adverse-media and enforcement watchlists and
-    enrolls the entity for ongoing monitoring. Accepts a request, validates at
-    entry, and processes the screening asynchronously. Returns HTTP 202 with a
-    job_id and user_id to track the result via callback.
+    Async AML (Anti-Money Laundering) Monitoring endpoint. Screens an individual against global sanctions, PEP, adverse-media and enforcement watchlists and enrolls the entity for ongoing monitoring. Accepts a request, validates at entry, and processes the screening asynchronously. Returns HTTP 202 with a job_id and user_id to track the result via callback.
 
-    Ongoing monitoring updates are delivered to the partner's default callback as
-    a separate webhook with `product` set to `aml_monitoring_update`.
+    Ongoing monitoring updates are delivered to the partner's default callback as a separate webhook with `product` set to `aml_monitoring_update`.
 
     Authentication: token-based (token header from /v3/token).
 
-    Either `full_name` (with optional `birth_year`) must be supplied, or
-    `search_existing_user` may be set to reuse PII from the user's prior
-    Biometric KYC or Document Verification enrollment (in which case `user_id`
-    is required and must resolve to a usable name).
+    Either `full_name` (with optional `birth_year`) must be supplied, or `search_existing_user` may be set to reuse PII from the user's prior Biometric KYC or Document Verification enrollment (in which case `user_id` is required and must resolve to a usable name).
 tags:
   - name: AML Monitoring
 paths:
@@ -39,63 +31,12 @@ paths:
         - SmileIDToken: []
       summary: Submit AML Monitoring screening
       description: >-
-        Submits an AML Monitoring screening request and processes it
-        asynchronously against global watchlists, enrolling the entity for
-        ongoing monitoring. Results are delivered via callback URL.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: 'android'
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: '10.4.2'
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
-            Required when your Smile ID account is configured to use SDK/partner secret HMAC
-            authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret
-            and the value of SmileID-Timestamp as salt. Required when your Smile ID
-            account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: '4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2'
-        - name: User-ID
-          in: header
-          required: false
-          description: >-
-            Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-            Must agree with body `user_id` and any token-bound user id — disagreement is a 403.
-            When `search_existing_user` is true, the body `user_id` is required.
-          schema:
-            type: string
+        Submits an AML Monitoring screening request and processes it asynchronously against global watchlists, enrolling the entity for ongoing monitoring. Results are delivered via callback URL.
+      parameters: []
       requestBody:
         required: true
         description: >-
-          multipart/form-data. Array fields (`countries`, `aliases`) must be sent
-          as a single JSON-encoded string (e.g. `countries='["NG","GH"]'`), not
-          as repeated form fields — multipart has no array encoding and a repeated
-          field is overwritten, which fails validation.
+          multipart/form-data. Array fields (`countries`, `aliases`) must be sent as a single JSON-encoded string (e.g. `countries='["NG","GH"]'`), not as repeated form fields — multipart has no array encoding and a repeated field is overwritten, which fails validation.
         content:
           multipart/form-data:
             schema:
@@ -197,8 +138,7 @@ paths:
                     message: Token is not authorized for this user ID.
         '404':
           description: >-
-            Not Found — `search_existing_user` was set but no matching enrollee or usable prior
-            record was found.
+            Not Found — `search_existing_user` was set but no matching enrollee or usable prior record was found.
           content:
             application/json:
               schema:
@@ -241,7 +181,6 @@ paths:
               example:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
-
 components:
   securitySchemes:
     SmileIDToken:
@@ -262,8 +201,7 @@ components:
           type: array
           minItems: 1
           description: >-
-            ISO 3166-1 alpha-2 country codes (uppercase) to screen against. Send
-            as a JSON-encoded string in the multipart body, e.g. '["NG","GH"]'.
+            ISO 3166-1 alpha-2 country codes (uppercase) to screen against. Send as a JSON-encoded string in the multipart body, e.g. '["NG","GH"]'.
           items:
             type: string
             minLength: 2
@@ -273,9 +211,7 @@ components:
           type: string
           minLength: 1
           description: >-
-            Full name of the individual to screen. Required unless
-            `search_existing_user` is true, in which case the name is resolved
-            from the user's prior KYC enrollment.
+            Full name of the individual to screen. Required unless `search_existing_user` is true, in which case the name is resolved from the user's prior KYC enrollment.
           example: Jane Doe
         birth_year:
           type: string
@@ -287,16 +223,13 @@ components:
           type: boolean
           default: true
           description: >-
-            When true (default) a higher match threshold is used, returning
-            fewer, more precise matches. When false a broader threshold is used.
+            When true (default) a higher match threshold is used, returning fewer, more precise matches. When false a broader threshold is used.
           example: true
         aliases:
           type: array
           maxItems: 20
           description: >-
-            Optional alternate names / spellings to screen alongside full_name.
-            Send as a JSON-encoded string in the multipart body, e.g.
-            '["Jane A. Doe","J. Doe"]'.
+            Optional alternate names / spellings to screen alongside full_name. Send as a JSON-encoded string in the multipart body, e.g. '["Jane A. Doe","J. Doe"]'.
           items:
             type: string
             minLength: 1
@@ -305,18 +238,12 @@ components:
         search_existing_user:
           type: boolean
           description: >-
-            When set, reuses the name (and birth year) from the user's prior
-            Biometric KYC or Document Verification enrollment. Requires `user_id`
-            (or the User-ID header), and that user must be an enrollee of this
-            partner with a prior KYC record carrying a usable name and country —
-            otherwise the request is rejected with a 404.
+            When set, reuses the name (and birth year) from the user's prior Biometric KYC or Document Verification enrollment. Requires `user_id` (or the User-ID header), and that user must be an enrollee of this partner with a prior KYC record carrying a usable name and country — otherwise the request is rejected with a 404.
           example: false
         user_id:
           type: string
           description: >-
-            Partner-provided user identifier. Optional, but required in the body when
-            `search_existing_user` is true; the User-ID header and token only have to agree
-            with it.
+            Partner-provided user identifier. Optional, but required in the body when `search_existing_user` is true; the User-ID header and token only have to agree with it.
           example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
         user_details:
           type: object
@@ -327,8 +254,7 @@ components:
             - required: [email]
             - required: [phone_number]
           description: >-
-            Consumer-stated PII fields for the user.
-            Either email or phone_number must be provided.
+            Consumer-stated PII fields for the user. Either email or phone_number must be provided.
           properties:
             given_names:
               type: string
@@ -359,9 +285,7 @@ components:
           format: uri
           pattern: '^https://'
           description: >-
-            URL to receive the async result callback. Falls back to partner default if omitted.
-            Must be on the partner's allowed callback domains list.
-            Can be provided via the token payload (bound at /v3/token) instead of the request body.
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: https://example.com/callback
         partner_params:
           type: object
@@ -411,7 +335,6 @@ components:
           pattern: '^https://'
           description: HTTPS URL of the privacy policy notice shown to the user.
           example: https://example.com/privacy
-
     AcceptedResponse:
       type: object
       required:
@@ -442,7 +365,6 @@ components:
           format: date-time
           description: ISO 8601 timestamp of when the verification was created.
           example: '2026-03-10T12:00:00.000Z'
-
     ApiErrorResponse:
       type: object
       required:

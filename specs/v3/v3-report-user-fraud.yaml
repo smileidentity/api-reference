@@ -24,7 +24,6 @@ info:
     **Authentication**: JWT token auth. The request IP must also pass the
     partner's IP allowlist (when configured) and must not appear on the IP
     blocklist.
-
 components:
   securitySchemes:
     SmileIDToken:
@@ -33,7 +32,6 @@ components:
       name: SmileID-Token
       description: JWT token obtained from `POST /v3/token`.
       x-gitbook-token-placeholder: YOUR_GENERATED_TOKEN
-
   schemas:
     ReportUserFraudRequest:
       type: object
@@ -78,7 +76,6 @@ components:
           description: Email address of the person submitting the report.
           example: risk@partner.example
       additionalProperties: true
-
     ReportUserFraudAcceptedResponse:
       type: object
       required:
@@ -98,7 +95,6 @@ components:
           type: string
           description: The `user_id` that was reported.
           example: user-123
-
     ApiErrorResponse:
       type: object
       required:
@@ -113,10 +109,8 @@ components:
           type: string
           description: Human-readable error message.
           example: Invalid request.
-
 security:
   - SmileIDToken: []
-
 tags:
   - name: Users
 paths:

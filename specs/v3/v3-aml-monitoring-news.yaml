@@ -12,12 +12,9 @@ info:
   title: V3 AML Monitoring News Media API
   version: '1.0.0'
   description: >-
-    Retrieves adverse-media news details for a specific person reference within
-    an existing V3 AML Monitoring job.
+    Retrieves adverse-media news details for a specific person reference within an existing V3 AML Monitoring job.
 
-    This endpoint wraps Sigma's monitoring news results and returns normalized
-    snake_case response keys, plus V3 metadata fields: user_id, job_id, and
-    product (always aml_monitoring_news).
+    This endpoint wraps Sigma's monitoring news results and returns normalized snake_case response keys, plus V3 metadata fields: user_id, job_id, and product (always aml_monitoring_news).
 tags:
   - name: AML Monitoring News
 paths:
@@ -109,8 +106,7 @@ paths:
           required: false
           x-smile-sdk-exclude: true
           description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required
-            when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
           schema:
             type: string
             format: date-time
@@ -120,9 +116,7 @@ paths:
           required: false
           x-smile-sdk-exclude: true
           description: >-
-            HMAC signature of the raw HTTP request payload, computed with your SDK/partner secret
-            and the value of SmileID-Timestamp as salt. Required when your Smile ID account is
-            configured to use SDK/partner secret HMAC authentication.
+            HMAC signature of the raw HTTP request payload, computed with your SDK/partner secret and the value of SmileID-Timestamp as salt. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
           schema:
             type: string
             example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
@@ -167,11 +161,7 @@ paths:
                   value:
                     status: Bad Request
                     message: >-
-                      news_category must be one of: arms_trafficking, credit_update,
-                      environmental_crime, financial_crime, human_rights_violation,
-                      leadership_change, legal_risk, location_change, narcotics, other,
-                      other_crime, ownership_change, product_change, regulatory,
-                      sexual_crime, technology_event, terrorism, violent_crime
+                      news_category must be one of: arms_trafficking, credit_update, environmental_crime, financial_crime, human_rights_violation, leadership_change, legal_risk, location_change, narcotics, other, other_crime, ownership_change, product_change, regulatory, sexual_crime, technology_event, terrorism, violent_crime
         '404':
           description: Not Found — AML job or reference not found for this partner scope.
           content:

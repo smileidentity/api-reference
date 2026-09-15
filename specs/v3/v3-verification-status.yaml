@@ -16,9 +16,7 @@ info:
 
     Authentication: token-based (SmileID-Token header with JWT from /v3/token).
 
-    The response includes the verification's current state as `status`:
-    one of clear, block, attention, error (terminal), processing, or not_found.
-
+    The response includes the verification's current state as `status`: one of clear, block, attention, error (terminal), processing, or not_found.
 tags:
   - name: Verification Status
 paths:
@@ -31,8 +29,7 @@ paths:
         - SmileIDToken: []
       summary: Get verification status
       description: >-
-        Retrieves the current status of a previously submitted verification.
-        Returns the latest state from the verification lifecycle (processing, clear, block, attention, error).
+        Retrieves the current status of a previously submitted verification. Returns the latest state from the verification lifecycle (processing, clear, block, attention, error).
       parameters:
         - name: jobId
           in: path
@@ -136,7 +133,6 @@ paths:
               example:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
-
 components:
   securitySchemes:
     SmileIDToken:
@@ -174,9 +170,7 @@ components:
         status:
           type: string
           description: >-
-            Verification status. Terminal states (clear, block, attention, error)
-            are returned with HTTP 200; processing is returned with HTTP 202;
-            not_found is returned with HTTP 404.
+            Verification status. Terminal states (clear, block, attention, error) are returned with HTTP 200; processing is returned with HTTP 202; not_found is returned with HTTP 404.
           enum:
             - clear
             - block
