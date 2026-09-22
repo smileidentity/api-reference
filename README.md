@@ -21,6 +21,7 @@ OpenAPI 3.0 specifications for the Smile Identity v3 API.
 | [One Time Aml](specs/v3/v3-one-time-aml-entry.yaml) | `POST /v3/aml/sync` | Submit One-Time AML screening and receive the result inline |
 | [Replay Callback](specs/v3/v3-replay-callback.yaml) | `POST /v3/replay/{job_id}` | Replay a callback for a completed verification |
 | [Report User Fraud](specs/v3/v3-report-user-fraud.yaml) | `POST /v3/users/{user_id}/report_fraud` | Flag or clear fraud status for a user |
+| [Residency Document Verification](specs/v3/v3-residency-document-verification-entry.yaml) | `POST /v3/residency_document_verification` | Submit Residency Document Verification |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/bank_codes` | List bank codes |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/id_status` | Get ID type availability status |
 | [Services](specs/v3/v3-services.yaml) | `GET /v3/services/supported_documents` | List supported documents for verification |
