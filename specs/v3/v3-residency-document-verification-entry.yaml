@@ -12,9 +12,9 @@ info:
   title: V3 Residency Document Verification API
   version: '1.0.0'
   description: >-
-    Async Residency Document Verification endpoint. Accepts everything standard Document Verification takes — a selfie image, liveness images and a document image (front, and optionally back) — plus the visa endorsed in that document. Both documents are read: the identity document is verified first, and the visa is then read and confirmed by a human reviewer. The id_type field is optional — the document type can be auto-classified if not provided. Returns HTTP 202 with a job_id and user_id to track the result via callback.
+    Async Residency Document Verification endpoint. Accepts everything standard Document Verification takes — a selfie image, liveness images and a passport image (front, and optionally back) — plus the visa endorsed in that passport. Both documents are read: the passport is verified first, and the visa is then read and verified. The id_type field is required and must be PASSPORT — a visa can only be endorsed in a passport, so no other document type is accepted. Returns HTTP 202 with a job_id and user_id to track the result via callback.
 
-    Every submission is reviewed by a person before it completes. A confirmed visa type is the point of the product and only a human supplies it, so a clean automated read does not short-circuit the review. Expect results to take materially longer to arrive than standard Document Verification, and rely on the callback rather than polling.
+    Expect results to take longer to arrive than standard Document Verification, and rely on the callback rather than polling.
 
     If the identity document itself fails verification, the job fails there and the visa is never read.
 
@@ -35,7 +35,7 @@ paths:
       security:
         - SmileIDToken: []
       description: >-
-        Verifies a user's identity by comparing a selfie against a document image, and additionally reads the visa endorsed in that document. The selfie and liveness images are uploaded alongside a document photo (front, and optionally back) and the visa. The id_type is optional — the document type is auto-classified if not provided. The visa is always confirmed by a human reviewer, so results take longer than standard Document Verification. Results are delivered asynchronously via callback URL.
+        Verifies a user's identity by comparing a selfie against a passport image, and additionally reads the visa endorsed in that passport. The selfie and liveness images are uploaded alongside a passport photo (front, and optionally back) and the visa. The id_type is required and must be PASSPORT. Results might take longer than the standard Document Verification product and are delivered asynchronously via callback URL.
       parameters:
         - name: SmileID-Partner-ID
           in: header
@@ -198,6 +198,16 @@ paths:
                   value:
                     status: Bad Request
                     message: "Required field 'consent.granted' is missing or invalid."
+                missingIdType:
+                  summary: Missing id_type
+                  value:
+                    status: Bad Request
+                    message: "Required field 'id_type' is missing or invalid."
+                invalidIdType:
+                  summary: id_type is not PASSPORT
+                  value:
+                    status: Bad Request
+                    message: "Field 'id_type' must be PASSPORT for residency document verification."
                 invalidDocumentMime:
                   summary: Invalid document image format
                   value:
@@ -297,6 +307,7 @@ components:
         - country
         - document
         - visa
+        - id_type
         - user_details
       properties:
         selfie_image:
@@ -339,8 +350,9 @@ components:
           example: NG
         id_type:
           type: string
+          enum: [PASSPORT]
           description: >-
-            Type of the identity document the visa is endorsed in (e.g., PASSPORT). Optional — the document type is auto-classified if not provided. This describes the identity document, never the visa; the visa's own class is determined during review. Can be provided via the token payload (bound at /v3/token) instead of the request body.
+            Type of the identity document the visa is endorsed in. Required, and must be PASSPORT — a visa can only be endorsed in a passport, so no other value is accepted. This describes the identity document, never the visa; the visa's own class is determined during verification. Can be provided via the token payload (bound at /v3/token) instead of the request body.
           example: PASSPORT
         user_details:
           type: object
