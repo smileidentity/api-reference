@@ -12,14 +12,17 @@ info:
   title: V3 Smile Links API
   version: 1.0.0
   description: |
-    Create and fetch Smile Links — unique URLs a partner hands to end users;
-    opening a link runs a pre-configured verification flow and creates a job
-    for the partner.
+    Create, fetch, update, and list Smile Links — unique URLs a partner hands
+    to end users; opening a link runs a pre-configured verification flow and
+    creates a job for the partner.
 
     Links created via this API are v3 links: they are referenced by an id
     (`ref_id`, a uuid), their URLs have the shape
     `https://links.usesmileid.com/v3/{partnerId}/{refId}`, and opening them
     runs the v3 hosted web integration.
+
+    All operations — create, fetch, update, and list — are synchronous and
+    return the result directly in the response.
 
     **Authentication**: JWT token auth via the `SmileID-Token` header
     (obtained from `POST /v3/token`). The token must be unscoped — a token
@@ -100,6 +103,11 @@ components:
           type: string
           format: date-time
           nullable: true
+        disabled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Set while the link is disabled; null when active.
         partner_params:
           type: object
           nullable: true
@@ -110,6 +118,12 @@ components:
             The user id a single-use link's job runs under (generated when not
             provided). Null on multi-use links — each opener gets its own user
             id at link-open.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
       additionalProperties: true
     SmileLinkCreated:
       type: object
@@ -139,6 +153,79 @@ components:
             provided). Null on multi-use links — each opener gets its own user
             id at link-open.
       additionalProperties: false
+    SmileLinkJobStats:
+      type: object
+      description: |
+        Outcome counts for the jobs run against a link. Each completed job is
+        counted once under its final state (`clear`, `block`, `attention` or
+        `error`); the `*_jobs` fields are derived from those four. Jobs still
+        processing are not counted in any field.
+      required:
+        - attention
+        - block
+        - clear
+        - error
+        - failed_jobs
+        - successful_jobs
+        - total_jobs
+      properties:
+        clear:
+          type: integer
+          description: Jobs that resolved clear.
+        block:
+          type: integer
+          description: Jobs that resolved block.
+        attention:
+          type: integer
+          description: Jobs that resolved attention (completed, flagged for review).
+        error:
+          type: integer
+          description: Jobs that ended in an error.
+        successful_jobs:
+          type: integer
+          description: clear + attention.
+        failed_jobs:
+          type: integer
+          description: block + error.
+        total_jobs:
+          type: integer
+          description: clear + block + attention + error.
+    SmileLinkListItem:
+      allOf:
+        - $ref: '#/components/schemas/SmileLinkResource'
+        - $ref: '#/components/schemas/SmileLinkJobStats'
+    SmileLinkListMeta:
+      type: object
+      required:
+        - current_page
+        - limit
+        - total_count
+        - total_pages
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total_count:
+          type: integer
+          example: 42
+        total_pages:
+          type: integer
+          example: 3
+    SmileLinkListResponse:
+      type: object
+      required:
+        - links
+        - meta
+      properties:
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/SmileLinkListItem'
+        meta:
+          $ref: '#/components/schemas/SmileLinkListMeta'
     ApiErrorResponse:
       type: object
       required:
@@ -288,7 +375,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
               example:
-                message: You are not allowed to do that.
+                message: You are not authorized to do that.
                 status: Forbidden
         '409':
           description: The provided `user_id` is already in use by another link.
@@ -317,7 +404,124 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
               example:
-                message: An error occurred while generating the link. Please try again!
+                message: An unexpected error occurred. Please try again or contact support.
+                status: Internal Server Error
+    get:
+      operationId: listSmileLinks
+      tags:
+        - Smile Links
+      summary: List Smile Links
+      description: |
+        Returns a paginated listing of the authenticated partner's v3 Smile
+        Links, newest first, each with per-link job outcome stats. Links
+        created through the v2 API are not included; they remain on the v2
+        listing endpoint.
+      security:
+        - SmileIDToken: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Page size. Defaults to 20, maximum 100.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+        - name: page
+          in: query
+          required: false
+          description: Page number, 1-indexed. Defaults to 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: single_use
+          in: query
+          required: false
+          description: Filter to single-use links (`true`) or reusable links (`false`). Omit to return both.
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: The paginated listing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmileLinkListResponse'
+              example:
+                links:
+                  - ref_id: 65983864-e8c6-4d09-890a-2e5f88fc50f6
+                    link: https://links.usesmileid.com/v3/2/65983864-e8c6-4d09-890a-2e5f88fc50f6
+                    name: Onboarding
+                    description: null
+                    id_types: [{country: NG, id_type: NIN, verification_method: enhanced_kyc}]
+                    is_single_use: false
+                    callback_url: https://partner.example/callback
+                    notice_privacy_policy_url: https://partner.example/privacy
+                    logo_url: https://portal.usesmileid.com/logo-black-horizontal.png
+                    redirect_url: null
+                    theme_color: '#000'
+                    expires_at: null
+                    disabled_at: null
+                    partner_params: null
+                    user_id: null
+                    created_at: '2024-01-15T10:30:00Z'
+                    updated_at: '2024-01-20T08:15:00Z'
+                    clear: 12
+                    block: 1
+                    attention: 2
+                    error: 0
+                    successful_jobs: 14
+                    failed_jobs: 1
+                    total_jobs: 15
+                meta:
+                  current_page: 1
+                  limit: 20
+                  total_count: 1
+                  total_pages: 1
+        '400':
+          description: Validation error — `limit`, `page`, or `single_use` is out of range or malformed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                invalidLimit:
+                  summary: limit out of range
+                  value:
+                    message: "Query parameter 'limit' must be an integer between 1 and 100."
+                    status: Bad Request
+        '401':
+          description: Authentication failed (missing, invalid, or product-scoped token).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: Missing or invalid authentication credentials.
+                status: Unauthorized
+        '403':
+          description: |
+            Access denied. Possible causes:
+            - IP address is on the blocklist or not in the partner's allowlist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: You are not authorized to do that.
+                status: Forbidden
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: An unexpected error occurred. Please try again or contact support.
                 status: Internal Server Error
   /v3/smile_links/{refId}:
     get:
@@ -370,7 +574,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
               example:
-                message: You are not allowed to do that.
+                message: You are not authorized to do that.
                 status: Forbidden
         '404':
           description: No link with this `refId` exists for the authenticated partner.
@@ -388,5 +592,153 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
               example:
-                message: System Error
+                message: An unexpected error occurred. Please try again or contact support.
+                status: Internal Server Error
+    put:
+      operationId: updateSmileLink
+      tags:
+        - Smile Links
+      summary: Update a Smile Link
+      description: |
+        Applies a partial update to a Smile Link's `id_types` and/or
+        `is_disabled` and returns the full, updated link resource.
+
+        These are the only mutable fields. Everything else on a link,
+        including `expires_at`, `is_single_use`, `user_id` and the URLs, is
+        fixed at creation.
+      security:
+        - SmileIDToken: []
+      parameters:
+        - name: refId
+          in: path
+          required: true
+          description: The link's id, returned as `ref_id` at creation.
+          schema:
+            type: string
+            format: uuid
+          example: 65983864-e8c6-4d09-890a-2e5f88fc50f6
+      requestBody:
+        required: true
+        description: |
+          At least one of `id_types` or `is_disabled` is required; either may
+          be sent alone.
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                id_types:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  description: JSON-encoded array of verification configurations, replacing the link's current `id_types`.
+                  items:
+                    $ref: '#/components/schemas/SmileLinkIdType'
+                is_disabled:
+                  type: boolean
+                  description: Disables (`true`) or re-enables (`false`) the link.
+            encoding:
+              id_types:
+                contentType: application/json
+            examples:
+              disable:
+                summary: Disable a link
+                value:
+                  is_disabled: true
+              replaceIdTypes:
+                summary: Replace the link's id_types
+                value:
+                  id_types: [{country: NG, id_type: NIN, verification_method: enhanced_kyc}]
+      responses:
+        '200':
+          description: The updated link resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SmileLinkResource'
+        '400':
+          description: |
+            Validation error. Possible causes:
+            - Neither `id_types` nor `is_disabled` was provided, or a provided value is malformed.
+            - An id_type/verification_method is not supported or not enabled on the account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingFields:
+                  summary: Neither field provided
+                  value:
+                    message: "Provide at least one of 'id_types' or 'is_disabled'."
+                    status: Bad Request
+        '401':
+          description: Authentication failed (missing, invalid, or product-scoped token).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: Missing or invalid authentication credentials.
+                status: Unauthorized
+        '403':
+          description: |
+            Access denied. Possible causes:
+            - Production is not enabled for the account.
+            - IP address is on the blocklist or not in the partner's allowlist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: You are not authorized to do that.
+                status: Forbidden
+        '404':
+          description: No link with this `refId` exists for the authenticated partner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: Link not found
+                status: Not Found
+        '409':
+          description: |
+            The link is single-use and has already been used. `id_types` can
+            no longer change; `is_disabled` alone is still accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: This link has already been used; its id_types can no longer change.
+                status: Conflict
+        '410':
+          description: The link has expired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: The link has expired.
+                status: Gone
+        '415':
+          description: |
+            Wrong or missing `Content-Type` header. The request body must be
+            sent as `multipart/form-data`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+                status: Unsupported Media Type
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                message: An unexpected error occurred. Please try again or contact support.
                 status: Internal Server Error
