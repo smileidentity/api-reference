@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [v3.967.0] - 2026-10-01
+
+### Changed
+- Updated `openapi`
+- Updated `v3-smile-links`
+
+
 ## [v3.952.0] - 2026-09-29
 
 ### Changed
