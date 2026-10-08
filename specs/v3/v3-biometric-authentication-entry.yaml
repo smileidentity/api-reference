@@ -156,7 +156,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of JPEG liveness images. Required unless use_enrolled_image is true.
+            Array of 6–8 JPEG liveness images, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. Required unless use_enrolled_image is true.
         consent:
           $ref: '#/components/schemas/Consent'
         user_details:
