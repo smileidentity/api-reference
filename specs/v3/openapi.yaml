@@ -696,6 +696,11 @@ paths:
                     status: Bad Request
                     message: >-
                       A valid callback_url is required in the request or a default callback URL must be configured in the portal.
+                insufficientLiveness:
+                  summary: Wrong number of liveness images
+                  value:
+                    status: Bad Request
+                    message: liveness_images must contain at least 6 images.
                 missingContact:
                   summary: Missing email and phone
                   value:
@@ -835,6 +840,11 @@ paths:
                     status: Bad Request
                     message: >-
                       A valid callback_url is required in the request or a default callback URL must be configured in the portal.
+                insufficientLiveness:
+                  summary: Wrong number of liveness images
+                  value:
+                    status: Bad Request
+                    message: liveness_images must contain at least 6 images.
                 missingCountry:
                   summary: Missing required field
                   value:
@@ -998,6 +1008,11 @@ paths:
                     status: Bad Request
                     message: >-
                       A valid callback_url is required in the request or a default callback URL must be configured in the portal.
+                insufficientLiveness:
+                  summary: Wrong number of liveness images
+                  value:
+                    status: Bad Request
+                    message: liveness_images must contain at least 6 images.
                 missingCountry:
                   summary: Missing required field
                   value:
@@ -1161,6 +1176,11 @@ paths:
                     status: Bad Request
                     message: >-
                       A valid callback_url is required in the request or a default callback URL must be configured in the portal.
+                insufficientLiveness:
+                  summary: Wrong number of liveness images
+                  value:
+                    status: Bad Request
+                    message: liveness_images must contain at least 6 images.
                 missingCountry:
                   summary: Missing required field
                   value:
@@ -4546,7 +4566,8 @@ components:
           items:
             type: string
             format: binary
-          description: Array of JPEG liveness images. Required unless use_enrolled_image is true.
+          description: >-
+            Array of 6–8 JPEG liveness images, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. Required unless use_enrolled_image is true.
         consent:
           $ref: '#/components/schemas/Consent'
         user_details:
@@ -4634,7 +4655,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of JPEG liveness sequence images captured during the liveness check. These images are used for passive and active liveness verification.
+            Array of 6–8 JPEG liveness sequence images captured during the liveness check, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. These images are used for passive and active liveness verification.
         consent:
           $ref: '#/components/schemas/Consent'
         user_details:
@@ -4743,7 +4764,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of JPEG liveness sequence images captured during the liveness check. These images are used for passive and active liveness verification.
+            Array of 6–8 JPEG liveness sequence images captured during the liveness check, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. These images are used for passive and active liveness verification.
         consent:
           $ref: '#/components/schemas/Consent'
         country:
@@ -4863,7 +4884,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of JPEG liveness sequence images captured during the liveness check. These images are used for liveness verification.
+            Array of 6–8 JPEG liveness sequence images captured during the liveness check, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. These images are used for liveness verification.
         document:
           type: string
           format: binary
@@ -4983,7 +5004,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of JPEG liveness sequence images captured during the liveness check. These images are used for liveness verification.
+            Array of 6–8 JPEG liveness sequence images captured during the liveness check, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. These images are used for liveness verification.
         document:
           type: string
           format: binary
@@ -6113,7 +6134,8 @@ components:
           items:
             type: string
             format: binary
-          description: Optional array of JPEG liveness images. If omitted, active liveness check is skipped.
+          description: >-
+            Optional array of 6–8 JPEG liveness images, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. If omitted, active liveness check is skipped.
         allow_new_enroll:
           type: boolean
           default: false
