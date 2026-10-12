@@ -282,11 +282,12 @@ paths:
                 notice_privacy_policy_url:
                   type: string
                   example: https://partner.example/privacy
+                  description: Must be a public HTTPS URL. Private, loopback, link-local and internal addresses are rejected.
                 is_single_use:
                   type: boolean
                 callback_url:
                   type: string
-                  description: Defaults to the partner's configured callback when omitted.
+                  description: Defaults to the partner's configured callback when omitted. Otherwise a public HTTPS URL; private, loopback, link-local and internal addresses are rejected.
                 description:
                   type: string
                 expires_at:
@@ -295,8 +296,10 @@ paths:
                   description: Defaults to 90 days from creation for single-use links.
                 logo_url:
                   type: string
+                  description: Must be a public HTTPS URL. Private, loopback, link-local and internal addresses are rejected.
                 redirect_url:
                   type: string
+                  description: Must be a public HTTPS URL. Private, loopback, link-local and internal addresses are rejected.
                 theme_color:
                   type: string
                 partner_params:
