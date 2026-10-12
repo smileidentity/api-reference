@@ -118,6 +118,60 @@ components:
             The user id a single-use link's job runs under (generated when not
             provided). Null on multi-use links — each opener gets its own user
             id at link-open.
+        token_provided_fields:
+          type: array
+          description: >-
+            Field names bound onto this link from the creating SmileID-Token's payload. Sorted. The hosted flow that opens the link skips collecting these from the end user; empty when the link was created without a bound token payload.
+          items:
+            type: string
+            enum:
+              - consent
+              - country
+              - email
+              - given_names
+              - id_number
+              - id_type
+              - last_name
+              - phone_number
+          example: [country, id_type]
+        token_provided_values:
+          type: object
+          description: >-
+            Values for the subset of token_provided_fields held in the clear (country, id_type, consent). PII fields are never returned here — the token holds opaque pii_-prefixed references to them, not the values. Empty object when nothing is bound.
+          properties:
+            country:
+              type: string
+              example: NG
+            id_type:
+              type: string
+              example: NIN
+            consent:
+              type: object
+              description: >-
+                The consent record bound from the token. Present only when consent is bound, and complete when present.
+              required:
+                - granted
+                - granted_at
+                - notice_language
+                - notice_privacy_policy_url
+              properties:
+                granted:
+                  type: boolean
+                  example: true
+                granted_at:
+                  type: string
+                  format: date-time
+                  example: '2026-01-01T09:00:00.000Z'
+                notice_language:
+                  type: string
+                  example: EN
+                notice_privacy_policy_url:
+                  type: string
+                  format: uri
+                  example: https://example.com/privacy-policy
+          example:
+            country: NG
+            id_type: NIN
         created_at:
           type: string
           format: date-time
@@ -256,6 +310,23 @@ paths:
         acknowledgment with the link's id (`ref_id`) and the URL to hand to
         the end user. The full link resource is available from
         `GET /v3/smile_links/{refId}`.
+
+        When the `SmileID-Token` header carries a payload (bound at
+        `POST /v3/token`), that payload is copied onto the link being
+        created — only single-use links accept a bound payload. The fields
+        it carries are surfaced as `token_provided_fields` /
+        `token_provided_values` on the link resource, and the hosted flow
+        that opens the link skips collecting them from the end user. If the
+        request body omits `user_id` and the token carries one, the link's
+        `user_id` defaults to it. The token's `callback_url` claim is never
+        used for the link — only the link's own `callback_url` (request
+        body or partner default) applies.
+
+        A bound `country` and/or `id_type` overrides what the end user
+        selects when they open the link, so each one the payload carries
+        must be offered by at least one of the link's `id_types`. The bound
+        payload is fixed at creation and cannot be changed by
+        `PUT /v3/smile_links/{refId}`.
       security:
         - SmileIDToken: []
       requestBody:
@@ -308,9 +379,10 @@ paths:
                 user_id:
                   type: string
                   description: |
-                    Unique user id for a single-use link's job. Generated
-                    (`user_` TypeID) when omitted. Must not already be in use
-                    by another link.
+                    Unique user id for a single-use link's job. Defaults to
+                    the SmileID-Token's user id when omitted and the token
+                    carries one; otherwise generated (`user_` TypeID). Must
+                    not already be in use by another link.
             encoding:
               id_types:
                 contentType: application/json
@@ -349,6 +421,10 @@ paths:
               `is_single_use`) is missing or invalid.
             - An id_type/verification_method is not supported or not enabled
               on the account.
+            - The `SmileID-Token` carries a payload but `is_single_use` is
+              `false`.
+            - The `SmileID-Token` payload's `country` and/or `id_type` is
+              not offered by any of the link's `id_types`.
           content:
             application/json:
               schema:
@@ -358,6 +434,16 @@ paths:
                   summary: Missing required field
                   value:
                     message: "Required field 'name' is missing or invalid."
+                    status: Bad Request
+                payloadNotSingleUse:
+                  summary: Token payload bound but the link is not single-use
+                  value:
+                    message: A token payload can only be bound to a single-use link.
+                    status: Bad Request
+                payloadIdTypeMismatch:
+                  summary: Token payload's country/id_type not among the link's id_types
+                  value:
+                    message: The token's country/id_type must match one of the link's id_types.
                     status: Bad Request
         '401':
           description: Authentication failed (missing, invalid, or product-scoped token).
@@ -607,8 +693,13 @@ paths:
         `is_disabled` and returns the full, updated link resource.
 
         These are the only mutable fields. Everything else on a link,
-        including `expires_at`, `is_single_use`, `user_id` and the URLs, is
-        fixed at creation.
+        including `expires_at`, `is_single_use`, `user_id`, the URLs and the
+        bound token payload, is fixed at creation. Any payload on this
+        request's `SmileID-Token` is ignored.
+
+        When a single-use link carries a bound payload with a `country`
+        and/or `id_type`, the new `id_types` must still offer each of them,
+        since they override what the end user selects when opening the link.
       security:
         - SmileIDToken: []
       parameters:
@@ -665,6 +756,8 @@ paths:
             Validation error. Possible causes:
             - Neither `id_types` nor `is_disabled` was provided, or a provided value is malformed.
             - An id_type/verification_method is not supported or not enabled on the account.
+            - The new `id_types` no longer offer the bound token payload's
+              `country` and/or `id_type`.
           content:
             application/json:
               schema:
@@ -674,6 +767,11 @@ paths:
                   summary: Neither field provided
                   value:
                     message: "Provide at least one of 'id_types' or 'is_disabled'."
+                    status: Bad Request
+                payloadIdTypeMismatch:
+                  summary: New id_types drop the bound payload's country/id_type
+                  value:
+                    message: The token's country/id_type must match one of the link's id_types.
                     status: Bad Request
         '401':
           description: Authentication failed (missing, invalid, or product-scoped token).
