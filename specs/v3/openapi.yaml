@@ -631,6 +631,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
+        '422':
+          description: >-
+            Unprocessable Content — the encrypted SDK package could not be decrypted or parsed. Returned when `encrypted_package` is supplied and `package_nonce` or `package_tag` is missing or the wrong length, the SmileID-Source-SDK or SmileID-Source-SDK-Version header is missing or unrecognised, or decryption or JSON parsing fails.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unprocessable Content
+                message: Invalid payload.
         '429':
           description: Too Many Requests — rate limit exceeded.
           content:
@@ -769,6 +779,16 @@ paths:
               example:
                 status: Unsupported Media Type
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '422':
+          description: >-
+            Unprocessable Content — the encrypted SDK package could not be decrypted or parsed. Returned when `encrypted_package` is supplied and `package_nonce` or `package_tag` is missing or the wrong length, the SmileID-Source-SDK or SmileID-Source-SDK-Version header is missing or unrecognised, or decryption or JSON parsing fails.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unprocessable Content
+                message: Invalid payload.
         '429':
           description: Too Many Requests — rate limit exceeded.
           content:
@@ -928,6 +948,16 @@ paths:
               example:
                 status: Unsupported Media Type
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '422':
+          description: >-
+            Unprocessable Content — the encrypted SDK package could not be decrypted or parsed. Returned when `encrypted_package` is supplied and `package_nonce` or `package_tag` is missing or the wrong length, the SmileID-Source-SDK or SmileID-Source-SDK-Version header is missing or unrecognised, or decryption or JSON parsing fails.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unprocessable Content
+                message: Invalid payload.
         '429':
           description: Too Many Requests — rate limit exceeded for this ID number.
           content:
@@ -1091,6 +1121,16 @@ paths:
               example:
                 status: Unsupported Media Type
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '422':
+          description: >-
+            Unprocessable Content — the encrypted SDK package could not be decrypted or parsed. Returned when `encrypted_package` is supplied and `package_nonce` or `package_tag` is missing or the wrong length, the SmileID-Source-SDK or SmileID-Source-SDK-Version header is missing or unrecognised, or decryption or JSON parsing fails.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unprocessable Content
+                message: Invalid payload.
         '429':
           description: Too Many Requests — rate limit exceeded.
           content:
@@ -1264,6 +1304,16 @@ paths:
               example:
                 status: Unsupported Media Type
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '422':
+          description: >-
+            Unprocessable Content — the encrypted SDK package could not be decrypted or parsed. Returned when `encrypted_package` is supplied and `package_nonce` or `package_tag` is missing or the wrong length, the SmileID-Source-SDK or SmileID-Source-SDK-Version header is missing or unrecognised, or decryption or JSON parsing fails.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unprocessable Content
+                message: Invalid payload.
         '429':
           description: Too Many Requests — rate limit exceeded.
           content:
@@ -2674,14 +2724,16 @@ paths:
         - name: SmileID-Source-SDK
           in: header
           required: false
-          description: Source SDK identifier.
+          description: >-
+            Source SDK identifier. Required when `encrypted_package` is supplied, together with SmileID-Source-SDK-Version, to select the decryption key.
           schema:
             type: string
             example: android
         - name: SmileID-Source-SDK-Version
           in: header
           required: false
-          description: Source SDK version.
+          description: >-
+            Source SDK version. Required when `encrypted_package` is supplied, together with SmileID-Source-SDK, to select the decryption key.
           schema:
             type: string
             example: 10.4.2
@@ -2690,7 +2742,7 @@ paths:
           required: false
           x-smile-sdk-exclude: true
           description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
+            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication. May be supplied inside `encrypted_package` instead of as a plain header.
           schema:
             type: string
             format: date-time
@@ -2898,6 +2950,16 @@ paths:
               example:
                 status: Unsupported Media Type
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '422':
+          description: >-
+            Unprocessable Content — the encrypted SDK package could not be decrypted or parsed. Returned when `encrypted_package` is supplied and `package_nonce` or `package_tag` is missing or the wrong length, the SmileID-Source-SDK or SmileID-Source-SDK-Version header is missing or unrecognised, or decryption or JSON parsing fails.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unprocessable Content
+                message: Invalid payload.
         '429':
           description: Too Many Requests — rate limit exceeded.
           content:
@@ -3269,6 +3331,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
+        '422':
+          description: >-
+            Unprocessable Content — the encrypted SDK package could not be decrypted or parsed. Returned when `encrypted_package` is supplied and `package_nonce` or `package_tag` is missing or the wrong length, the SmileID-Source-SDK or SmileID-Source-SDK-Version header is missing or unrecognised, or decryption or JSON parsing fails.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unprocessable Content
+                message: Invalid payload.
         '429':
           description: Too Many Requests — rate limit exceeded.
           content:
@@ -4671,6 +4743,24 @@ components:
           type: object
           additionalProperties:
             type: string
+        encrypted_package:
+          type: string
+          pattern: ^[0-9a-fA-F]+$
+          description: >-
+            Encrypted package produced by a Smile ID SDK. Forward it unchanged. When present, `package_nonce` and `package_tag` and the SmileID-Source-SDK and SmileID-Source-SDK-Version headers are required.
+          example: 9f3c1a7e52b08d46e1f27a9c3b5d80e4a6c2f19b7d3e05a8c4
+        package_nonce:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          description: >-
+            Nonce for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 0a1b2c3d4e5f60718293a4b5
+        package_tag:
+          type: string
+          pattern: ^[0-9a-fA-F]{32}$
+          description: >-
+            Tag for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 00112233445566778899aabbccddeeff
         metadata:
           type: array
           items:
@@ -4776,6 +4866,24 @@ components:
           description: Arbitrary key-value metadata for partner reference.
           example:
             order_id: ORD-12345
+        encrypted_package:
+          type: string
+          pattern: ^[0-9a-fA-F]+$
+          description: >-
+            Encrypted package produced by a Smile ID SDK. Forward it unchanged. When present, `package_nonce` and `package_tag` and the SmileID-Source-SDK and SmileID-Source-SDK-Version headers are required.
+          example: 9f3c1a7e52b08d46e1f27a9c3b5d80e4a6c2f19b7d3e05a8c4
+        package_nonce:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          description: >-
+            Nonce for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 0a1b2c3d4e5f60718293a4b5
+        package_tag:
+          type: string
+          pattern: ^[0-9a-fA-F]{32}$
+          description: >-
+            Tag for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 00112233445566778899aabbccddeeff
         metadata:
           type: array
           description: Additional metadata entries (e.g., SDK telemetry, device info).
@@ -4897,6 +5005,24 @@ components:
           description: Arbitrary key-value metadata for partner reference.
           example:
             order_id: ORD-12345
+        encrypted_package:
+          type: string
+          pattern: ^[0-9a-fA-F]+$
+          description: >-
+            Encrypted package produced by a Smile ID SDK. Forward it unchanged. When present, `package_nonce` and `package_tag` and the SmileID-Source-SDK and SmileID-Source-SDK-Version headers are required.
+          example: 9f3c1a7e52b08d46e1f27a9c3b5d80e4a6c2f19b7d3e05a8c4
+        package_nonce:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          description: >-
+            Nonce for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 0a1b2c3d4e5f60718293a4b5
+        package_tag:
+          type: string
+          pattern: ^[0-9a-fA-F]{32}$
+          description: >-
+            Tag for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 00112233445566778899aabbccddeeff
         metadata:
           type: array
           description: Additional metadata entries (e.g., SDK telemetry, device info).
@@ -5016,6 +5142,24 @@ components:
           description: Arbitrary key-value metadata for partner reference.
           example:
             order_id: ORD-12345
+        encrypted_package:
+          type: string
+          pattern: ^[0-9a-fA-F]+$
+          description: >-
+            Encrypted package produced by a Smile ID SDK. Forward it unchanged. When present, `package_nonce` and `package_tag` and the SmileID-Source-SDK and SmileID-Source-SDK-Version headers are required.
+          example: 9f3c1a7e52b08d46e1f27a9c3b5d80e4a6c2f19b7d3e05a8c4
+        package_nonce:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          description: >-
+            Nonce for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 0a1b2c3d4e5f60718293a4b5
+        package_tag:
+          type: string
+          pattern: ^[0-9a-fA-F]{32}$
+          description: >-
+            Tag for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 00112233445566778899aabbccddeeff
         metadata:
           type: array
           description: Additional metadata entries (e.g., SDK telemetry, device info).
@@ -5137,6 +5281,24 @@ components:
           description: Arbitrary key-value metadata for partner reference.
           example:
             order_id: ORD-12345
+        encrypted_package:
+          type: string
+          pattern: ^[0-9a-fA-F]+$
+          description: >-
+            Encrypted package produced by a Smile ID SDK. Forward it unchanged. When present, `package_nonce` and `package_tag` and the SmileID-Source-SDK and SmileID-Source-SDK-Version headers are required.
+          example: 9f3c1a7e52b08d46e1f27a9c3b5d80e4a6c2f19b7d3e05a8c4
+        package_nonce:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          description: >-
+            Nonce for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 0a1b2c3d4e5f60718293a4b5
+        package_tag:
+          type: string
+          pattern: ^[0-9a-fA-F]{32}$
+          description: >-
+            Tag for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 00112233445566778899aabbccddeeff
         metadata:
           type: array
           description: Additional metadata entries (e.g., SDK telemetry, device info).
@@ -5833,6 +5995,24 @@ components:
           description: Arbitrary key-value metadata for partner reference.
           example:
             order_id: ORD-12345
+        encrypted_package:
+          type: string
+          pattern: ^[0-9a-fA-F]+$
+          description: >-
+            Encrypted package produced by a Smile ID SDK. Forward it unchanged. When present, `package_nonce` and `package_tag` and the SmileID-Source-SDK and SmileID-Source-SDK-Version headers are required.
+          example: 9f3c1a7e52b08d46e1f27a9c3b5d80e4a6c2f19b7d3e05a8c4
+        package_nonce:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          description: >-
+            Nonce for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 0a1b2c3d4e5f60718293a4b5
+        package_tag:
+          type: string
+          pattern: ^[0-9a-fA-F]{32}$
+          description: >-
+            Tag for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 00112233445566778899aabbccddeeff
         metadata:
           type: array
           description: Additional metadata entries (e.g., SDK telemetry, device info).
@@ -6207,6 +6387,24 @@ components:
           type: object
           additionalProperties:
             type: string
+        encrypted_package:
+          type: string
+          pattern: ^[0-9a-fA-F]+$
+          description: >-
+            Encrypted package produced by a Smile ID SDK. Forward it unchanged. When present, `package_nonce` and `package_tag` and the SmileID-Source-SDK and SmileID-Source-SDK-Version headers are required.
+          example: 9f3c1a7e52b08d46e1f27a9c3b5d80e4a6c2f19b7d3e05a8c4
+        package_nonce:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+          description: >-
+            Nonce for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 0a1b2c3d4e5f60718293a4b5
+        package_tag:
+          type: string
+          pattern: ^[0-9a-fA-F]{32}$
+          description: >-
+            Tag for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: 00112233445566778899aabbccddeeff
         metadata:
           type: array
           items:

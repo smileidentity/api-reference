@@ -19,6 +19,8 @@ info:
     At least one of `email` or `phone_number` is required.
 
     Token Payload: Identity fields (country, id_type, given_names, last_name, email, phone_number, callback_url) and the ISO 27560 consent fields can be bound to the authentication token via the token payload feature at /v3/token (PII fields are held as opaque references, never raw values). When present in the token, these fields are injected automatically and override any values in the request body. Fields provided via the token do not need to be repeated in the request body; GET /v3/services/config lists them as token_provided_fields.
+
+    Encrypted SDK package: when a request is captured by a Smile ID SDK and forwarded by the partner's backend, the SDK can encrypt the request fields and headers into `encrypted_package` (with `package_nonce` and `package_tag`). The partner forwards these three form fields unchanged, alongside the image files and the SmileID-Source-SDK and SmileID-Source-SDK-Version headers. Smile ID decrypts the package before validation, so required fields may be supplied inside the package instead of as plain form fields. A package that cannot be decrypted or parsed is rejected with HTTP 422.
 tags:
   - name: Document Verification
 paths:
@@ -166,6 +168,16 @@ paths:
               example:
                 status: Unsupported Media Type
                 message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '422':
+          description: >-
+            Unprocessable Content — the encrypted SDK package could not be decrypted or parsed. Returned when `encrypted_package` is supplied and `package_nonce` or `package_tag` is missing or the wrong length, the SmileID-Source-SDK or SmileID-Source-SDK-Version header is missing or unrecognised, or decryption or JSON parsing fails.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unprocessable Content
+                message: Invalid payload.
         '429':
           description: Too Many Requests — rate limit exceeded.
           content:
@@ -296,6 +308,24 @@ components:
           description: Arbitrary key-value metadata for partner reference.
           example:
             order_id: 'ORD-12345'
+        encrypted_package:
+          type: string
+          pattern: '^[0-9a-fA-F]+$'
+          description: >-
+            Encrypted package produced by a Smile ID SDK. Forward it unchanged. When present, `package_nonce` and `package_tag` and the SmileID-Source-SDK and SmileID-Source-SDK-Version headers are required.
+          example: '9f3c1a7e52b08d46e1f27a9c3b5d80e4a6c2f19b7d3e05a8c4'
+        package_nonce:
+          type: string
+          pattern: '^[0-9a-fA-F]{24}$'
+          description: >-
+            Nonce for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: '0a1b2c3d4e5f60718293a4b5'
+        package_tag:
+          type: string
+          pattern: '^[0-9a-fA-F]{32}$'
+          description: >-
+            Tag for `encrypted_package`, produced by a Smile ID SDK. Forward it unchanged. Required when `encrypted_package` is supplied.
+          example: '00112233445566778899aabbccddeeff'
         metadata:
           type: array
           description: Additional metadata entries (e.g., SDK telemetry, device info).
