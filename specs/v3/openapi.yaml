@@ -557,8 +557,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Authenticates a user by comparing a submitted selfie against their enrolled image. The selfie and liveness images are uploaded, validated at entry, then queued for async ML processing (passive liveness, active liveness, face matching). Results are delivered via callback URL.
-
-        Supports `use_enrolled_image: true` to skip selfie/liveness upload and re-use the enrolled image for the comparison (useful for server-side re-verification).
       parameters: []
       requestBody:
         required: true
@@ -3972,6 +3970,11 @@ paths:
                     - smart_selfie_registration
                     - smart_selfie_compare
                   example: smart_selfie_authentication
+                use_enrolled_image:
+                  type: boolean
+                  default: false
+                  description: >-
+                    Grants the session a Biometric KYC job that verifies against the user's enrolled selfie instead of a fresh capture, so selfie_image and liveness_images may be omitted on that job. Only this request can grant it, because only it is authenticated with the partner's API key — a value sent on the job itself is discarded. Applies to Biometric KYC only.
                 payload:
                   type: object
                   description: >-
@@ -4662,17 +4665,8 @@ components:
         - user_id
         - consent
         - user_details
-      anyOf:
-        - required:
-            - selfie_image
-            - liveness_images
-        - required:
-            - use_enrolled_image
-          properties:
-            use_enrolled_image:
-              type: boolean
-              enum:
-                - true
+        - selfie_image
+        - liveness_images
       properties:
         user_id:
           type: string
@@ -4681,7 +4675,7 @@ components:
         selfie_image:
           type: string
           format: binary
-          description: JPEG selfie image for authentication. Required unless use_enrolled_image is true.
+          description: JPEG selfie image for authentication.
         liveness_images:
           type: array
           minItems: 6
@@ -4690,7 +4684,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of 6–8 JPEG liveness images, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. Required unless use_enrolled_image is true.
+            Array of 6–8 JPEG liveness images, or exactly the count set by sdk_config.livenessImageCount when the session token carries one.
         consent:
           $ref: '#/components/schemas/Consent'
         user_details:
@@ -4725,11 +4719,6 @@ components:
               nullable: true
               description: Phone number in E.164 format. At least one of email or phone_number is required.
               example: '+2348012345678'
-        use_enrolled_image:
-          type: boolean
-          default: false
-          description: >-
-            If true, skips selfie and liveness image upload and uses the enrolled image for re-verification. Useful for server-side re-authentication.
         callback_url:
           type: string
           format: uri

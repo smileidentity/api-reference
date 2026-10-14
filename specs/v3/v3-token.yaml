@@ -74,6 +74,11 @@ paths:
                     - smart_selfie_registration
                     - smart_selfie_compare
                   example: smart_selfie_authentication
+                use_enrolled_image:
+                  type: boolean
+                  default: false
+                  description: >-
+                    Grants the session a Biometric KYC job that verifies against the user's enrolled selfie instead of a fresh capture, so selfie_image and liveness_images may be omitted on that job. Only this request can grant it, because only it is authenticated with the partner's API key — a value sent on the job itself is discarded. Applies to Biometric KYC only.
                 payload:
                   type: object
                   description: >-
