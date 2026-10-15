@@ -413,6 +413,9 @@ paths:
         Returns the current availability and success rate for a specific ID type
         in a given country, based on uptime data from the last hour.
 
+        In sandbox there is no uptime data. The endpoint returns `online` by default,
+        or the state named in `sandbox_status`, so you can test how your flow handles each one.
+
         Requires authentication via JWT token.
       security:
         - SmileIDToken: []
@@ -431,6 +434,17 @@ paths:
           schema:
             type: string
             example: BVN
+        - name: sandbox_status
+          in: query
+          required: false
+          description: |
+            Sandbox only. The state to return: `online` (100% success rate), `interruption` (75%),
+            `offline` (0%), or `no_data` (the 400 no-data error). Defaults to `online`.
+            Production ignores the value but still rejects anything not on this list.
+          schema:
+            type: string
+            enum: [online, interruption, offline, no_data]
+            default: online
       responses:
         '200':
           description: ID status retrieved successfully.
@@ -461,6 +475,11 @@ paths:
                   value:
                     message: Invalid country
                     status: Bad Request
+                invalidSandboxStatus:
+                  summary: sandbox_status not one of the allowed values
+                  value:
+                    message: '"sandbox_status" must be one of [online, interruption, offline, no_data]'
+                    status: Bad Request
                 invalidIdType:
                   summary: ID type not valid for country
                   value:
@@ -469,7 +488,7 @@ paths:
                 noData:
                   summary: No uptime data in the last hour
                   value:
-                    message: 'No data found. Check that NG and BVN are valid inputs'
+                    message: No availability data recorded for BVN in NG in the last hour
                     status: Bad Request
         '401':
           description: Authentication failed.
