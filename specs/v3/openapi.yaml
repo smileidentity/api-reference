@@ -2783,7 +2783,7 @@ paths:
             post:
               summary: Residency Document Verification result callback
               description: >-
-                The standard Document Verification callback body, plus an `additional_documents` array carrying what was read from the visa. Only this product sends that key; plain and Enhanced Document Verification omit it entirely. The array is populated only when the job reaches `clear` or `attention` — on `block` or `error` the key is present but empty, matching how `id_fields` is suppressed on a failed outcome. Only the visa-specific part of the body is specified here; every other field matches the Document Verification callback.
+                The standard Document Verification callback body, plus an `additional_documents` array carrying what was read from the visa. Only this product sends that key; plain and Enhanced Document Verification omit it entirely. The array is populated only when the job reaches `clear` or `attention` — on `block` or `error` the key is present but empty, matching how `id_fields` is suppressed on a failed outcome. Only the visa-specific part of the body is specified here; every other field matches the Document Verification callback. It also carries `match_fields`, comparing the visa with the passport; a mismatch blocks the job with reason `cross_document_mismatch`.
               requestBody:
                 required: true
                 content:
@@ -2810,6 +2810,16 @@ paths:
                                 The holder is not or does not become a prohibited or undesirable person. To conduct work as a human resource officer.
                               no_of_entries: multiple
                               document_primary_id: AA0789993
+                          match_fields:
+                            decision: MATCH
+                            id_number_to_visa_match:
+                              result: MATCH
+                              id_value: A000000X
+                              visa_value: A000000X
+                            last_name_match:
+                              result: PARTIAL
+                              id_value: Doe
+                              visa_value: John D.
                       blocked:
                         summary: Suppressed on a non-clear outcome
                         value:
@@ -6063,6 +6073,51 @@ components:
             Documents read alongside the one that identifies the job. Present only on this product, and populated only when `status` is `clear` or `attention`. Empty on any other outcome, or when nothing could be read from the visa.
           items:
             $ref: '#/components/schemas/AdditionalDocument'
+        match_fields:
+          $ref: '#/components/schemas/MatchFields'
+    MatchFields:
+      type: object
+      description: >-
+        How the visa in `additional_documents` compares with the passport in `id_fields`. Present only on this product, and only when `additional_documents` carries a visa (`clear` or `attention`). When the visa does not carry a field it is reported as `NOT_PRESENT`; the passport always carries both.
+      properties:
+        decision:
+          type: string
+          enum:
+            - MATCH
+            - PARTIAL_MATCH
+            - NO_MATCH
+            - SINGLE_FIELD_MATCH
+            - FIELD_NOT_PRESENT
+          description: >-
+            The two field results rolled up. `MATCH` clears; `PARTIAL_MATCH` (one of two fields matches), `SINGLE_FIELD_MATCH` (the visa carries one field and it matches) and `FIELD_NOT_PRESENT` (the visa carries neither) return `attention` with reasons `cross_document_partial_match`, `cross_document_single_field_match` and `cross_document_fields_not_present`. `NO_MATCH` blocks the job with reason `cross_document_mismatch`, so it is never seen here.
+        id_number_to_visa_match:
+          $ref: '#/components/schemas/FieldMatch'
+        last_name_match:
+          $ref: '#/components/schemas/FieldMatch'
+    FieldMatch:
+      type: object
+      description: One field compared across the two documents, with the values compared.
+      properties:
+        result:
+          type: string
+          enum:
+            - MATCH
+            - PARTIAL
+            - NO_MATCH
+            - NOT_PRESENT
+          description: >-
+            ID numbers are compared exactly, ignoring case, spaces and hyphens. The last name is looked for anywhere in the visa's printed name; `PARTIAL` means it is within two edits (Levenshtein distance) and counts as a match in `decision`.
+        id_value:
+          type: string
+          nullable: true
+          description: The value from the passport (`id_fields`).
+          example: A000000X
+        visa_value:
+          type: string
+          nullable: true
+          description: >-
+            The value from the visa (`additional_documents`). For the last name this is the visa's full printed name, which the last name is matched within.
+          example: A000000X
     AdditionalDocument:
       type: object
       description: A document read alongside the one that identifies the job.
