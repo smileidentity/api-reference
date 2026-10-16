@@ -3174,7 +3174,21 @@ paths:
       summary: Get ID type availability status
       description: |
         Returns the current availability and success rate for a specific ID type
-        in a given country, based on uptime data from the last hour.
+        in a given country.
+
+        Every 10 minutes, Smile ID works out the share of the previous 10 minutes'
+        verifications for the ID type in which the ID authority responded. Only an
+        "ID authority unavailable" result counts as a failure: a not-found or no-match
+        result still means the authority responded. `last_known_status` comes from the
+        latest of these 10-minute results:
+
+        - `online`: more than 91% of checks succeeded
+        - `interruption`: more than 50% and up to 91% succeeded
+        - `offline`: 50% or fewer succeeded
+
+        A result is only recorded for a window that had traffic. For an ID type with
+        little traffic, the latest result can be up to an hour old (see `last_checked`).
+        If there is no result in the last hour, the endpoint returns a 400 no-data error.
 
         In sandbox there is no uptime data. The endpoint returns `online` by default,
         or the state named in `sandbox_status`, so you can test how your flow handles each one.
@@ -6322,26 +6336,41 @@ components:
         last_checked:
           type: string
           format: date-time
-          description: Timestamp of the most recent uptime check.
+          description: >-
+            When the latest 10-minute availability result was calculated. Use it to tell how old the status is.
           example: '2026-04-14T12:30:00.000Z'
         last_check_status:
           type: string
           enum:
             - success
             - failure
-          description: Whether the most recent check succeeded or failed.
+          deprecated: true
+          description: |
+            Deprecated: use `last_known_status`. `failure` when `last_known_status` is `offline`,
+            otherwise `success`, so `interruption` always comes with `success`.
           example: success
         last_hour_success_rate:
           type: string
-          description: Aggregate success rate over the last hour as a percentage.
+          description: >-
+            Success rate across every 10-minute result in the last hour, as a whole percentage rounded down.
           example: 95%
         last_known_status:
           type: string
-          description: The raw status string from the most recent check (e.g. "online", "offline").
+          enum:
+            - online
+            - interruption
+            - offline
+          description: |
+            Availability from the latest 10-minute result. `online` when more than 91% of
+            checks succeeded, `interruption` when more than 50% and up to 91% succeeded,
+            `offline` when 50% or fewer succeeded.
           example: online
         last_check_success_rate:
           type: string
-          description: Success rate of the most recent individual check as a percentage.
+          description: |
+            Success rate in the latest 10-minute result, as a whole percentage rounded down.
+            Because of the rounding, 91% can appear with `online` or `interruption`, and 50%
+            with `interruption` or `offline`.
           example: 90%
     ServiceErrorResponse:
       type: object
