@@ -494,6 +494,12 @@ components:
         operator:
           type: string
           description: Telecom operator (required for certain ID types).
+        citizenship:
+          type: string
+          enum: [Kenyan, Alien]
+          description: >-
+            Required when id_type is KRA_PIN (KE): whether the ID number is a Kenyan national ID or an alien card. Case-insensitive. Ignored for other ID types.
+          example: Kenyan
         partner_params:
           type: object
           additionalProperties:
