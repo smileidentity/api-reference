@@ -19,6 +19,8 @@ info:
     At least one of `email` or `phone_number` is required. The `user_id` field is required and must match an existing enrolled user.
 
     Encrypted SDK package: when a request is captured by a Smile ID SDK and forwarded by the partner's backend, the SDK can encrypt the request fields and headers into `encrypted_package` (with `package_nonce` and `package_tag`). The partner forwards these three form fields unchanged, alongside the image files and the SmileID-Source-SDK and SmileID-Source-SDK-Version headers. Smile ID decrypts the package before validation, so required fields may be supplied inside the package instead of as plain form fields. A package that cannot be decrypted or parsed is rejected with HTTP 422.
+
+    The partner may add form fields and files of its own alongside the package, such as `callback_url`. The payload signature does not cover them: it covers only the package and the SDK-captured images (`selfie_image`, `liveness_images`, `document` and `document_back`), which must come from the SDK. A field that also appears in the package must agree with it. Objects such as `partner_params` may gain extra keys, but any other difference is rejected with HTTP 422, naming the field.
 tags:
   - name: Biometric Authentication
 paths:
@@ -105,7 +107,7 @@ paths:
                 $ref: '#/components/schemas/ApiErrorResponse'
         '422':
           description: >-
-            Unprocessable Content — the encrypted SDK package could not be decrypted or parsed. Returned when `encrypted_package` is supplied and `package_nonce` or `package_tag` is missing or the wrong length, the SmileID-Source-SDK or SmileID-Source-SDK-Version header is missing or unrecognised, or decryption or JSON parsing fails.
+            Unprocessable Content — the encrypted SDK package could not be decrypted or parsed. Returned when `encrypted_package` is supplied and `package_nonce` or `package_tag` is missing or the wrong length, the SmileID-Source-SDK or SmileID-Source-SDK-Version header is missing or unrecognised, or decryption or JSON parsing fails, or a form field sent alongside the package conflicts with a field inside it.
           content:
             application/json:
               schema:
