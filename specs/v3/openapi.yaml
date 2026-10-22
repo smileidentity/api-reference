@@ -2783,7 +2783,10 @@ paths:
             post:
               summary: Residency Document Verification result callback
               description: >-
-                The standard Document Verification callback body, plus an `additional_documents` array carrying what was read from the visa. Only this product sends that key; plain and Enhanced Document Verification omit it entirely. The array is populated only when the job reaches `clear` or `attention` — on `block` or `error` the key is present but empty, matching how `id_fields` is suppressed on a failed outcome. Only the visa-specific part of the body is specified here; every other field matches the Document Verification callback. It also carries `match_fields`, comparing the visa with the passport; a mismatch blocks the job with reason `cross_document_mismatch`.
+                The standard Document Verification callback body, plus an `additional_documents` array carrying what was read from the visa. Only this product sends that key; plain and Enhanced Document Verification omit it entirely. The array is populated only when the job reaches `clear` or `attention` — on `block` or `error` the key is present but empty, matching how `id_fields` is suppressed on a failed outcome. Only the visa-specific part of the body is specified here; every other field matches the Document Verification callback. It also carries `match_fields`, comparing the visa with the passport; a mismatch blocks the job with reason `cross_document_mismatch` when both fields differ, `cross_document_name_mismatch` when the visa carries only a name and it differs, or `cross_document_id_number_mismatch` when the visa carries only an ID number and it differs.
+
+
+                The reason says which document caused the outcome. `document_check_failed`, `document_expired` and `document_copy_detected` are about the passport alone. A rejected visa blocks with `visa_check_failed`. An expired visa returns `attention` with `visa_expired`, and a photocopied visa with `visa_copy_detected`. When both documents have expired the reason is `document_visa_expired`, and when both are photocopies it is `document_visa_copy_detected`. Expiry is reported ahead of a photocopy.
               requestBody:
                 required: true
                 content:
@@ -6111,7 +6114,7 @@ components:
             - SINGLE_FIELD_MATCH
             - FIELD_NOT_PRESENT
           description: >-
-            The two field results rolled up. `MATCH` clears; `PARTIAL_MATCH` (one of two fields matches), `SINGLE_FIELD_MATCH` (the visa carries one field and it matches) and `FIELD_NOT_PRESENT` (the visa carries neither) return `attention` with reasons `cross_document_partial_match`, `cross_document_single_field_match` and `cross_document_fields_not_present`. `NO_MATCH` blocks the job with reason `cross_document_mismatch`, so it is never seen here.
+            The two field results rolled up. `MATCH` clears; `PARTIAL_MATCH` (one of two fields matches), `SINGLE_FIELD_MATCH` (the visa carries one field and it matches) and `FIELD_NOT_PRESENT` (the visa carries neither) return `attention` with reasons `cross_document_partial_match`, `cross_document_single_field_match` and `cross_document_fields_not_present`. `NO_MATCH` blocks the job with reason `cross_document_mismatch`, `cross_document_name_mismatch` or `cross_document_id_number_mismatch`, so it is never seen here.
         id_number_to_visa_match:
           $ref: '#/components/schemas/FieldMatch'
         last_name_match:
