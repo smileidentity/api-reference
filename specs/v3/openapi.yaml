@@ -3462,7 +3462,7 @@ paths:
                 callback_url:
                   type: string
                   description: >-
-                    Defaults to the partner's configured callback when omitted. Otherwise a public HTTPS URL; private, loopback, link-local and internal addresses are rejected.
+                    Defaults to the partner's configured callback when omitted; if there is none, the request is rejected with 400. Otherwise a public HTTPS URL; private, loopback, link-local and internal addresses are rejected.
                 description:
                   type: string
                 expires_at:
