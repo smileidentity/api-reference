@@ -106,7 +106,7 @@ paths:
                 status: Forbidden
                 message: You are not authorized to do that.
         '404':
-          description: Not Found — verification does not exist or does not belong to this partner.
+          description: Not Found — verification does not exist, does not belong to this partner, or does not belong to the user the token was issued for.
           headers:
             api_version:
               $ref: '#/components/headers/ApiVersion'

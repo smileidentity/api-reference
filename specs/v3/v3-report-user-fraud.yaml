@@ -249,6 +249,7 @@ paths:
             Access denied. Possible causes:
             - IP address is on the blocklist.
             - IP not in partner's allowlist.
+            - The token was issued for a different `user_id` than the one in the path.
           content:
             application/json:
               schema:

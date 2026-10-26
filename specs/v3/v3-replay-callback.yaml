@@ -125,7 +125,7 @@ paths:
                 message: You are not authorized to do that.
         '404':
           description: >-
-            Not Found — verification does not exist, does not belong to this partner, or has no reference entry.
+            Not Found — verification does not exist, does not belong to this partner or to the user the token was issued for, or has no reference entry.
           content:
             application/json:
               schema:
