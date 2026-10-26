@@ -3453,6 +3453,12 @@ paths:
                 name:
                   type: string
                   example: Onboarding
+                company_name:
+                  type: string
+                  maxLength: 255
+                  description: >-
+                    The company name the link shows end users. Omit it to show the company's own name; otherwise it must match, exactly, the company name or one of the alternative display names Smile ID has approved for the company. It cannot be changed after the link is created.
+                  example: Acme Pay
                 notice_privacy_policy_url:
                   type: string
                   example: https://partner.example/privacy
@@ -6567,6 +6573,11 @@ components:
         name:
           type: string
           example: Onboarding
+        company_name:
+          type: string
+          description: >-
+            The company name the link shows end users — an approved alternative display name if one was chosen at creation, otherwise the company's own name.
+          example: Acme Pay
         description:
           type: string
           nullable: true
