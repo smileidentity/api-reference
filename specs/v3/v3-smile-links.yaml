@@ -382,6 +382,9 @@ paths:
                   description: Must be a public HTTPS URL. Private, loopback, link-local and internal addresses are rejected.
                 theme_color:
                   type: string
+                  maxLength: 32
+                  pattern: '^(#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|(rgb|hsl)a?\([0-9., %/]+\)|[a-zA-Z]{3,30})$'
+                  description: 'A hex colour such as #0a0a0a, an rgb() or hsl() value, or a colour name.'
                 partner_params:
                   type: object
                   description: JSON-encoded key-value pairs echoed on job results.
