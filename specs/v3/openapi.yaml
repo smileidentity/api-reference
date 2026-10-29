@@ -25,6 +25,7 @@ tags:
   - name: Enhanced Document Verification
   - name: Enhanced KYC
   - name: One-Time AML
+  - name: Phone Number Verification
   - name: Residency Document Verification
   - name: Services
   - name: Smart Selfie Compare
@@ -58,42 +59,7 @@ paths:
         * `block` (`identifier_not_found`) — the provider has no record for the ID or utility number.
 
         * `error` (`service_unavailable`) — the provider could not be reached.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: rest_api
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 1.0.0
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
-          schema:
-            type: string
-            format: date-time
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: HMAC signature of the raw HTTP request body.
-          schema:
-            type: string
-        - name: User-ID
-          in: header
-          required: false
-          description: Partner-provided user identifier override.
-          schema:
-            type: string
+      parameters: []
       requestBody:
         required: true
         content:
@@ -2394,6 +2360,114 @@ paths:
               example:
                 status: Internal Server Error
                 message: An unexpected error occurred. Please try again or contact support.
+  /v3/phone:
+    post:
+      summary: Submit a phone number verification
+      operationId: v3PhoneVerification
+      tags:
+        - Phone Number Verification
+      security:
+        - SmileIDToken: []
+      description: >-
+        Looks up `phone_number` with the mobile network or registry for its country and compares the registration against `user_details.given_names`, `user_details.last_name` and, when you send one, `id_number`. Kenya requires `id_number`.
+
+        The result is one of: an exact match on every field you supplied (clear), a match on some of them (attention), no match (block), or no registration for that number (block).
+
+        Ghana requires `operator`, because the number ranges and the lookup differ per network.
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhoneVerificationRequest'
+      responses:
+        '202':
+          description: Accepted — job queued for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: accepted
+                message: Job submitted successfully
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingPhoneNumber:
+                  summary: Missing or malformed phone number
+                  value:
+                    status: Bad Request
+                    message: Required field 'phone_number' is missing or invalid.
+                wrongCountry:
+                  summary: Number cannot belong to the country given
+                  value:
+                    status: Bad Request
+                    message: Field 'phone_number' is not a valid phone number for KE.
+                missingIdNumber:
+                  summary: Kenya request with no id_number
+                  value:
+                    status: Bad Request
+                    message: Required field 'id_number' is missing or invalid.
+                missingOperator:
+                  summary: Ghana request with no operator
+                  value:
+                    status: Bad Request
+                    message: Required field 'operator' is missing or invalid.
+                unsupportedCountry:
+                  summary: No phone number provider for the country
+                  value:
+                    status: Bad Request
+                    message: Required field 'country' is missing or invalid.
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: >-
+                      A valid callback_url is required in the request or a default callback URL must be configured in the portal.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '403':
+          description: Forbidden — partner not authorized for this product, country or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '429':
+          description: Too Many Requests — rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
   /v3/replay/{job_id}:
     post:
       operationId: replayCallback
@@ -4071,7 +4145,8 @@ paths:
                       example: john@example.com
                     phone_number:
                       type: string
-                      description: Phone number in E.164 format.
+                      description: >-
+                        Contact phone number of the individual, in E.164 format. It binds `user_details.phone_number`, so for phone number verification it is the contact number, never the number checked.
                       example: '+2348012345678'
                     callback_url:
                       type: string
@@ -5847,6 +5922,116 @@ components:
           additionalProperties: true
           description: >-
             Device/network signals captured at submission time. Always `null` for an `error` outcome, and best-effort `null` when no metadata was captured.
+    PhoneVerificationRequest:
+      type: object
+      required:
+        - country
+        - consent
+        - phone_number
+        - user_details
+      anyOf:
+        - properties:
+            country:
+              not:
+                enum:
+                  - KE
+        - required:
+            - id_number
+      properties:
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: ^[A-Z]{2}$
+          description: >-
+            ISO 3166-1 alpha-2 code of the country the number belongs to. Only countries with a phone number provider are accepted. Call GET /v3/services/config for the list available to you.
+          example: NG
+        phone_number:
+          type: string
+          pattern: ^\+[1-9]\d{6,14}$
+          description: >-
+            The number to verify, in E.164 format. It must be a number for `country` (and, in Ghana, for `operator`).
+          example: '+2348012345678'
+        operator:
+          type: string
+          enum:
+            - MTN
+            - VODAFONE
+            - AIRTELTIGO
+          description: Mobile network operator. Required for Ghana, ignored elsewhere.
+          example: MTN
+        id_number:
+          type: string
+          minLength: 1
+          maxLength: 256
+          description: >-
+            National ID number to match against the number's registration, reported separately in `matched_fields`. Required for Kenya, optional elsewhere.
+          example: '12345678901'
+        consent:
+          $ref: '#/components/schemas/Consent'
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required:
+                - email
+            - required:
+                - phone_number
+          description: >-
+            Consumer-stated PII fields for the person the number should be registered to. The given names and last name are compared against the registration. Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              example: Blessing Okoro
+            last_name:
+              type: string
+              minLength: 1
+              example: Matchwell
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: At least one of email or phone_number is required.
+              example: blessing@example.com
+            phone_number:
+              type: string
+              pattern: ^\+[1-9]\d{6,14}$
+              nullable: true
+              description: >-
+                The consumer's contact number in E.164 format, not the number checked. At least one of email or phone_number is required.
+              example: '+2348098765432'
+        user_id:
+          type: string
+          description: >-
+            Optional partner-provided user identifier. Must match the token user identifier when both are supplied. If no user identifier is supplied, a TypeID is generated automatically.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+        callback_url:
+          type: string
+          format: uri
+          pattern: ^https://
+          description: URL to receive the async result callback.
+          example: https://example.com/callback
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+        metadata:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
     ReplayCallbackRequest:
       type: object
       properties:

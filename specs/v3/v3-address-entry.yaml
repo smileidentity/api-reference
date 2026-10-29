@@ -48,45 +48,7 @@ paths:
         * `block` (`identifier_not_found`) — the provider has no record for the ID or utility number.
 
         * `error` (`service_unavailable`) — the provider could not be reached.
-      parameters:
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: 'rest_api'
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: '1.0.0'
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature.
-          schema:
-            type: string
-            format: date-time
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body.
-          schema:
-            type: string
-        - name: User-ID
-          in: header
-          required: false
-          description: >-
-            Partner-provided user identifier override.
-          schema:
-            type: string
+      parameters: []
       requestBody:
         required: true
         content:
