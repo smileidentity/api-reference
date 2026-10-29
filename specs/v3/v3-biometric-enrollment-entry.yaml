@@ -249,11 +249,6 @@ components:
               description: >-
                 Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
               example: '+2348012345678'
-        allow_new_enroll:
-          type: boolean
-          default: false
-          description: >-
-            If true, allows re-enrollment for a user who is already enrolled. The existing enrollment will be replaced with the new selfie. If false (default), enrollment fails if the user is already enrolled.
         user_id:
           type: string
           description: Optional partner-provided user identifier. Must match the token user identifier when both are supplied. If no user identifier is supplied, a TypeID is generated automatically.

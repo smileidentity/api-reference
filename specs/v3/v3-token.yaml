@@ -49,7 +49,8 @@ paths:
               properties:
                 user_id:
                   type: string
-                  description: Optional partner-provided user identifier.
+                  description: >-
+                    Optional partner-provided user identifier. Required when use_enrolled_image or allow_new_enroll is true.
                 partner_params:
                   type: object
                   additionalProperties:
@@ -78,7 +79,12 @@ paths:
                   type: boolean
                   default: false
                   description: >-
-                    Grants the session a Biometric KYC job that verifies against the user's enrolled selfie instead of a fresh capture, so selfie_image and liveness_images may be omitted on that job. Only this request can grant it, because only it is authenticated with the partner's API key — a value sent on the job itself is discarded. Applies to Biometric KYC only.
+                    Grants the session a Biometric KYC job that verifies against the user's enrolled selfie instead of a fresh capture, so selfie_image and liveness_images may be omitted on that job. Only this request can grant it, because only it is authenticated with the partner's API key — a value sent on the job itself is discarded. Applies to Biometric KYC only. Cannot be true together with allow_new_enroll.
+                allow_new_enroll:
+                  type: boolean
+                  default: false
+                  description: >-
+                    Grants the session's job permission to re-enrol the user: when the job passes, its selfie replaces the user's enrolled selfie. Requires user_id, and the user must already be enrolled with a selfie on file: otherwise the job ends with status error and reason no_enrolled_user_found or no_enrolled_photo. Only true has an effect. Only this request can grant it — a value sent on the job itself is discarded. Without it, an enrolled user's selfie is never replaced. Applies to SmartSelfie Registration, SmartSelfie Compare, Biometric KYC, Document Verification and Residency Document Verification. Cannot be true together with use_enrolled_image: a request with both is rejected with 400.
                 payload:
                   type: object
                   description: >-

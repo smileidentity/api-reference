@@ -215,11 +215,6 @@ components:
             format: binary
           description: >-
             Optional array of 6–8 JPEG liveness images, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. If omitted, active liveness check is skipped.
-        allow_new_enroll:
-          type: boolean
-          default: false
-          description: >-
-            If true, allows re-enrollment for a user who is already enrolled.
         user_id:
           type: string
           description: >-
