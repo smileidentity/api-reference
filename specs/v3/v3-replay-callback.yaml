@@ -30,6 +30,8 @@ info:
 
 
 
+
+
       1. `callback_url` from request body (validated against partner's allowed domains)
       2. `callback_url` stored with the original verification
       3. Partner's default callback URL

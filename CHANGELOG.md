@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [v3.1094.0] - 2026-10-29
+
+### Changed
+- Updated `openapi`
+- Updated `v3-address-entry`
+- Updated `v3-phone-verification-entry`
+- Updated `v3-replay-callback`
+- Updated `v3-token`
+
+
 ## [v3.1090.0] - 2026-10-28
 
 ### Changed
