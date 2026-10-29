@@ -55,7 +55,8 @@ components:
           example: NIN
         verification_method:
           type: string
-          description: The verification product to run for this ID type.
+          description: >-
+            The verification product to run for this ID type: biometric_kyc, document_verification, enhanced_document_verification or enhanced_kyc. The legacy name doc_verification is also accepted for document_verification. Links store Document Verification as doc_verification, so that is the name returned when a link is read.
           example: enhanced_kyc
       additionalProperties: false
     SmileLinkResource:
