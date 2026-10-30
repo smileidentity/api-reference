@@ -79,7 +79,7 @@ paths:
                   type: boolean
                   default: false
                   description: >-
-                    Grants the session a Biometric KYC job that verifies against the user's enrolled selfie instead of a fresh capture, so selfie_image and liveness_images may be omitted on that job. Only this request can grant it, because only it is authenticated with the partner's API key — a value sent on the job itself is discarded. Applies to Biometric KYC only. Cannot be true together with allow_new_enroll.
+                    Grants the session a job that verifies against the user's enrolled selfie instead of a fresh capture. On Biometric KYC, selfie_image and liveness_images may be omitted. On Document Verification (standard, enhanced and residency), the document is compared against the enrolled selfie: selfie_image is ignored if sent, and liveness_images may be omitted or sent to be checked against the enrolled selfie. Requires user_id; a Document Verification job for a user with no enrolled selfie ends with status error and reason no_enrolled_user_found or no_enrolled_photo. Only this request can grant it, because only it is authenticated with the partner's API key — a value sent on the job itself is discarded. Applies to Biometric KYC and Document Verification only. Cannot be true together with allow_new_enroll.
                 allow_new_enroll:
                   type: boolean
                   default: false

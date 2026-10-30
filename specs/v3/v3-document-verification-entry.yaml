@@ -210,8 +210,6 @@ components:
     DocumentVerificationRequest:
       type: object
       required:
-        - selfie_image
-        - liveness_images
         - consent
         - country
         - document
@@ -221,7 +219,7 @@ components:
           type: string
           format: binary
           description: >-
-            JPEG selfie image used for biometric verification. Must be a clear, well-lit, front-facing photo.
+            JPEG selfie image used for biometric verification. Must be a clear, well-lit, front-facing photo. Required unless the session token was issued with use_enrolled_image: then the document is compared against the user's enrolled selfie, and a selfie sent anyway is ignored. If the user has no enrolled selfie, the job ends with status error and reason no_enrolled_user_found or no_enrolled_photo.
         liveness_images:
           type: array
           minItems: 6
@@ -230,7 +228,7 @@ components:
             type: string
             format: binary
           description: >-
-            Array of 6–8 JPEG liveness sequence images captured during the liveness check, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. These images are used for liveness verification.
+            Array of 6–8 JPEG liveness sequence images captured during the liveness check, or exactly the count set by sdk_config.livenessImageCount when the session token carries one. These images are used for liveness verification. Required unless the session token was issued with use_enrolled_image. When sent with that grant, they are checked for liveness against the user's enrolled selfie.
         document:
           type: string
           format: binary

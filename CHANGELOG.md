@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [v3.1115.0] - 2026-10-30
+
+### Changed
+- Updated `openapi`
+- Updated `v3-document-verification-entry`
+- Updated `v3-enhanced-document-verification-entry`
+- Updated `v3-residency-document-verification-entry`
+- Updated `v3-token`
+
+
 ## [v3.1108.0] - 2026-10-29
 
 ### Changed
