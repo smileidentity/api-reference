@@ -4,6 +4,7 @@ servers:
     description: Sandbox
   - url: https://api.smileidentity.com
     description: Production
+x-internal: false
 info:
   title: V3 One-Time AML API
   version: '1.1.0'
