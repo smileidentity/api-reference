@@ -4,6 +4,7 @@ servers:
     description: Sandbox
   - url: https://api.smileidentity.com
     description: Production
+x-internal: false
 info:
   contact:
     name: Smile ID Support
