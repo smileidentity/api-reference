@@ -87,39 +87,6 @@ paths:
             maximum: 100
             default: 25
             example: 25
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request payload, computed with your SDK/partner secret and the value of SmileID-Timestamp as salt. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
       responses:
         '200':
           description: Success

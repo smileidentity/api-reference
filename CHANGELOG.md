@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [v3.1151.0] - 2026-11-10
+
+### Changed
+- Updated `openapi`
+- Updated `v3-address-entry`
+- Updated `v3-aml-monitoring-entry`
+- Updated `v3-aml-monitoring-news`
+- Updated `v3-biometric-authentication-entry`
+- Updated `v3-biometric-enrollment-entry`
+- Updated `v3-biometric-kyc-entry`
+- Updated `v3-document-verification-entry`
+- Updated `v3-enhanced-document-verification-entry`
+- Updated `v3-enhanced-kyc-entry`
+- Updated `v3-one-time-aml-entry`
+- Updated `v3-phone-verification-entry`
+- Updated `v3-replay-callback`
+- Updated `v3-residency-document-verification-entry`
+- Updated `v3-smart-selfie-compare-entry`
+
+
 ## [v3.1115.0] - 2026-10-30
 
 ### Changed

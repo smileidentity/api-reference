@@ -12,7 +12,7 @@ info:
 
     Two endpoints run the same screening and differ only in how you receive the result. `POST /v3/aml` validates at entry, processes asynchronously, and returns HTTP 202 with a job_id and user_id, delivering the result to your callback URL. `POST /v3/aml/sync` performs the screening inline and returns that same result in the response body, for partners who would rather not host a public webhook endpoint; it sends no callback and takes longer to respond.
 
-    Authentication: standard V3 token (SmileID-Token header from /v3/token) or V3 HMAC request signature (SmileID-Timestamp + SmileID-Request-Signature headers). There is no token-only restriction.
+    Authentication: standard V3 token (SmileID-Token header from /v3/token).
 
     This is distinct from ongoing AML monitoring (job type 10, `SmileProduct.AML`), which now lives at `POST /v3/aml/monitoring` — see the V3 AML Monitoring API spec.
 
@@ -28,7 +28,6 @@ paths:
       summary: Submit One-Time AML screening
       description: >-
         Screens the supplied full name (and optional aliases/birth year) against sanctions, PEP, and adverse-media lists for the given countries. Results are delivered asynchronously via callback URL. No human review is performed — the callback carries a terminal outcome.
-      parameters: []
       requestBody:
         required: true
         description: >-

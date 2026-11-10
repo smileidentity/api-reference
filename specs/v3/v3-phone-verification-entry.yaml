@@ -34,7 +34,6 @@ paths:
         The result is one of: an exact match on every field you supplied (clear), a match on some of them (attention), no match (block), or no registration for that number (block).
 
         Ghana requires `operator`, because the number ranges and the lookup differ per network.
-      parameters: []
       requestBody:
         required: true
         content:

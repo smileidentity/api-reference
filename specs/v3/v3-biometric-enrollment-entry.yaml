@@ -36,7 +36,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Enrolls a user's biometric selfie for future authentication. The selfie and liveness images are uploaded, validated at entry, then processed asynchronously (passive liveness, active liveness). Results are delivered via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:

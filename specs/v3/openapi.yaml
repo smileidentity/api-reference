@@ -59,7 +59,6 @@ paths:
         * `block` (`identifier_not_found`) — the provider has no record for the ID or utility number.
 
         * `error` (`service_unavailable`) — the provider could not be reached.
-      parameters: []
       requestBody:
         required: true
         content:
@@ -156,7 +155,6 @@ paths:
       summary: Submit AML Monitoring screening
       description: >-
         Submits an AML Monitoring screening request and processes it asynchronously against global watchlists, enrolling the entity for ongoing monitoring. Results are delivered via callback URL.
-      parameters: []
       requestBody:
         required: true
         description: >-
@@ -376,39 +374,6 @@ paths:
             maximum: 100
             default: 25
             example: 25
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: Source SDK identifier.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: Source SDK version.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request payload, computed with your SDK/partner secret and the value of SmileID-Timestamp as salt. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
       responses:
         '200':
           description: Success
@@ -523,7 +488,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Authenticates a user by comparing a submitted selfie against their enrolled image. The selfie and liveness images are uploaded, validated at entry, then queued for async ML processing (passive liveness, active liveness, face matching). Results are delivered via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:
@@ -627,7 +591,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Enrolls a user's biometric selfie for future authentication. The selfie and liveness images are uploaded, validated at entry, then processed asynchronously (passive liveness, active liveness). Results are delivered via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:
@@ -781,7 +744,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Combines biometric selfie verification with KYC identity checks against the relevant ID authority. The selfie and liveness images are uploaded alongside identity details (country, id_type, id_number), validated at entry, then processed asynchronously. Results are delivered via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:
@@ -950,7 +912,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Verifies a user's identity by comparing a selfie against a document image. The selfie and liveness images are uploaded alongside a document photo (front, and optionally back). The id_type is optional — the document type is auto-classified if not provided. Results are delivered asynchronously via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:
@@ -1123,7 +1084,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Verifies a user's identity by comparing a selfie against a document image and cross-referencing extracted data for additional verification. The selfie and liveness images are uploaded alongside a document photo (front, and optionally back). The id_type is required for this endpoint. Results are delivered asynchronously via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:
@@ -1306,7 +1266,6 @@ paths:
       summary: Submit Enhanced KYC verification
       description: >-
         Allows submission of Enhanced KYC verification requests and processes the verification asynchronously against the relevant ID authority. Results are delivered via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:
@@ -1461,7 +1420,6 @@ paths:
         The request body, headers and validation are otherwise identical to the async endpoint, and the job is billed once, exactly as an async job is.
 
         Because a caller is waiting, this endpoint does not retry internally the way the async one does. A verification that could not be completed is reported with a REST status code rather than a 200 carrying an error status: 424 when the ID authority answered that it was unavailable, 408 when it did not answer inside the request deadline, 500 on an internal failure. In all three the job is recorded and its id is returned in SmileID-Job-ID — read the outcome from GET /v3/status/{jobId} rather than resubmitting, which would run and bill a second lookup.
-      parameters: []
       requestBody:
         required: true
         content:
@@ -1688,7 +1646,6 @@ paths:
       summary: Submit One-Time AML screening
       description: >-
         Screens the supplied full name (and optional aliases/birth year) against sanctions, PEP, and adverse-media lists for the given countries. Results are delivered asynchronously via callback URL. No human review is performed — the callback carries a terminal outcome.
-      parameters: []
       requestBody:
         required: true
         description: >-
@@ -2374,7 +2331,6 @@ paths:
         The result is one of: an exact match on every field you supplied (clear), a match on some of them (attention), no match (block), or no registration for that number (block).
 
         Ghana requires `operator`, because the number ranges and the lookup differ per network.
-      parameters: []
       requestBody:
         required: true
         content:
@@ -2785,56 +2741,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Verifies a user's identity by comparing a selfie against a passport image, and additionally reads the visa endorsed in that passport. The selfie and liveness images are uploaded alongside a passport photo (front, and optionally back) and the visa. The id_type is required and must be PASSPORT. Results might take longer than the standard Document Verification product and are delivered asynchronously via callback URL.
-      parameters:
-        - name: SmileID-Partner-ID
-          in: header
-          required: true
-          description: Partner identifier (numeric, 3+ digits).
-          schema:
-            type: string
-            pattern: ^\d{3,}$
-            example: '1234'
-        - name: SmileID-Source-SDK
-          in: header
-          required: false
-          description: >-
-            Source SDK identifier. Required when `encrypted_package` is supplied, together with SmileID-Source-SDK-Version, to select the decryption key.
-          schema:
-            type: string
-            example: android
-        - name: SmileID-Source-SDK-Version
-          in: header
-          required: false
-          description: >-
-            Source SDK version. Required when `encrypted_package` is supplied, together with SmileID-Source-SDK, to select the decryption key.
-          schema:
-            type: string
-            example: 10.4.2
-        - name: SmileID-Timestamp
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            ISO 8601 timestamp used as the salt when computing SmileID-Request-Signature. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication. May be supplied inside `encrypted_package` instead of as a plain header.
-          schema:
-            type: string
-            format: date-time
-            example: '2026-03-10T12:00:00.000Z'
-        - name: SmileID-Request-Signature
-          in: header
-          required: false
-          x-smile-sdk-exclude: true
-          description: >-
-            HMAC signature of the raw HTTP request body, computed with your SDK/partner secret and the value of SmileID-Timestamp as salt. Required when your Smile ID account is configured to use SDK/partner secret HMAC authentication.
-          schema:
-            type: string
-            example: 4f2d9c6b8a7e3f1c0d5e4b3a2c1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2
-        - name: User-ID
-          in: header
-          required: false
-          description: Partner-provided user identifier. If omitted, a TypeID is generated automatically.
-          schema:
-            type: string
       requestBody:
         required: true
         content:
@@ -3370,7 +3276,6 @@ paths:
         Compares a selfie image against a provided comparison image (document, ID photo, or portrait). The images are uploaded, validated at entry, then queued for async ML processing (passive liveness, face matching, optional active liveness with liveness images). Results are delivered via callback URL.
 
         If `user_id` is provided and the comparison passes, the user will be enrolled.
-      parameters: []
       requestBody:
         required: true
         content:

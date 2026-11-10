@@ -32,7 +32,6 @@ paths:
       summary: Submit Enhanced KYC verification
       description: >-
         Allows submission of Enhanced KYC verification requests and processes the verification asynchronously against the relevant ID authority. Results are delivered via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:
@@ -186,7 +185,6 @@ paths:
         The request body, headers and validation are otherwise identical to the async endpoint, and the job is billed once, exactly as an async job is.
 
         Because a caller is waiting, this endpoint does not retry internally the way the async one does. A verification that could not be completed is reported with a REST status code rather than a 200 carrying an error status: 424 when the ID authority answered that it was unavailable, 408 when it did not answer inside the request deadline, 500 on an internal failure. In all three the job is recorded and its id is returned in SmileID-Job-ID — read the outcome from GET /v3/status/{jobId} rather than resubmitting, which would run and bill a second lookup.
-      parameters: []
       requestBody:
         required: true
         content:

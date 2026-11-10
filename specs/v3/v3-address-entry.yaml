@@ -48,7 +48,6 @@ paths:
         * `block` (`identifier_not_found`) — the provider has no record for the ID or utility number.
 
         * `error` (`service_unavailable`) — the provider could not be reached.
-      parameters: []
       requestBody:
         required: true
         content:
