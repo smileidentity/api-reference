@@ -36,7 +36,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Verifies a user's identity by comparing a selfie against a document image and cross-referencing extracted data for additional verification. The selfie and liveness images are uploaded alongside a document photo (front, and optionally back). The id_type is required for this endpoint. Results are delivered asynchronously via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:

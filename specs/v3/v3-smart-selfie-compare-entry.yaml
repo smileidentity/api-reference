@@ -36,7 +36,6 @@ paths:
         Compares a selfie image against a provided comparison image (document, ID photo, or portrait). The images are uploaded, validated at entry, then queued for async ML processing (passive liveness, face matching, optional active liveness with liveness images). Results are delivered via callback URL.
 
         If `user_id` is provided and the comparison passes, the user will be enrolled.
-      parameters: []
       requestBody:
         required: true
         content:

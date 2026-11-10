@@ -36,7 +36,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Combines biometric selfie verification with KYC identity checks against the relevant ID authority. The selfie and liveness images are uploaded alongside identity details (country, id_type, id_number), validated at entry, then processed asynchronously. Results are delivered via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:

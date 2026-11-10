@@ -34,7 +34,6 @@ paths:
         - SmileIDToken: []
       description: >-
         Authenticates a user by comparing a submitted selfie against their enrolled image. The selfie and liveness images are uploaded, validated at entry, then queued for async ML processing (passive liveness, active liveness, face matching). Results are delivered via callback URL.
-      parameters: []
       requestBody:
         required: true
         content:

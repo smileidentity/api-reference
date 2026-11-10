@@ -32,7 +32,6 @@ paths:
       summary: Submit AML Monitoring screening
       description: >-
         Submits an AML Monitoring screening request and processes it asynchronously against global watchlists, enrolling the entity for ongoing monitoring. Results are delivered via callback URL.
-      parameters: []
       requestBody:
         required: true
         description: >-
