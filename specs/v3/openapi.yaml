@@ -5817,7 +5817,8 @@ components:
           type: object
           nullable: true
           additionalProperties: true
-          description: Antifraud risk assessment. `null` when no scored fraud result exists for the job.
+          description: >-
+            Antifraud risk assessment. Always `null` for an `error` outcome, and `null` when no scored fraud result exists for the job.
         device_signals:
           type: object
           nullable: true
