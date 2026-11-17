@@ -69,6 +69,7 @@ paths:
                     - biometric_kyc
                     - address_verification
                     - document_verification
+                    - residency_document_verification
                     - enhanced_document_verification
                     - enhanced_kyc
                     - phone_number_verification

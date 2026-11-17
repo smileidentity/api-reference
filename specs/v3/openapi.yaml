@@ -37,6 +37,7 @@ paths:
     post:
       summary: Submit an address verification
       operationId: v3AddressVerification
+      x-smile-token-product: address_verification
       tags:
         - Address Verification
       security:
@@ -148,6 +149,7 @@ paths:
   /v3/aml/monitoring:
     post:
       operationId: submitAmlMonitoring
+      x-smile-token-product: aml
       tags:
         - AML Monitoring
       security:
@@ -308,6 +310,7 @@ paths:
   /v3/aml/monitoring/{job_id}/news/{reference}:
     get:
       operationId: getAmlMonitoringNews
+      x-smile-token-product: aml
       tags:
         - AML Monitoring News
       security:
@@ -482,6 +485,7 @@ paths:
     post:
       summary: Submit biometric authentication
       operationId: v3BiometricAuthentication
+      x-smile-token-product: smart_selfie_authentication
       tags:
         - Biometric Authentication
       security:
@@ -585,6 +589,7 @@ paths:
     post:
       summary: Submit biometric enrollment
       operationId: v3BiometricEnrollment
+      x-smile-token-product: smart_selfie_registration
       tags:
         - Biometric Enrollment
       security:
@@ -738,6 +743,7 @@ paths:
     post:
       summary: Submit Biometric KYC verification
       operationId: v3BiometricKycEntry
+      x-smile-token-product: biometric_kyc
       tags:
         - Biometric KYC
       security:
@@ -906,6 +912,7 @@ paths:
     post:
       summary: Submit Document Verification
       operationId: v3DocumentVerificationEntry
+      x-smile-token-product: document_verification
       tags:
         - Document Verification
       security:
@@ -1078,6 +1085,7 @@ paths:
     post:
       summary: Submit Enhanced Document Verification
       operationId: v3EnhancedDocumentVerificationEntry
+      x-smile-token-product: enhanced_document_verification
       tags:
         - Enhanced Document Verification
       security:
@@ -1259,6 +1267,7 @@ paths:
   /v3/enhanced_kyc:
     post:
       operationId: submitEnhancedKyc
+      x-smile-token-product: enhanced_kyc
       tags:
         - Enhanced KYC
       security:
@@ -1407,6 +1416,7 @@ paths:
   /v3/enhanced_kyc/sync:
     post:
       operationId: submitEnhancedKycSync
+      x-smile-token-product: enhanced_kyc
       tags:
         - Enhanced KYC
       security:
@@ -1639,6 +1649,7 @@ paths:
   /v3/aml:
     post:
       operationId: submitOneTimeAml
+      x-smile-token-product: one_time_aml
       tags:
         - One-Time AML
       security:
@@ -1997,6 +2008,7 @@ paths:
   /v3/aml/sync:
     post:
       operationId: submitOneTimeAmlSync
+      x-smile-token-product: one_time_aml
       tags:
         - One-Time AML
       security:
@@ -2321,6 +2333,7 @@ paths:
     post:
       summary: Submit a phone number verification
       operationId: v3PhoneVerification
+      x-smile-token-product: phone_number_verification
       tags:
         - Phone Number Verification
       security:
@@ -2735,6 +2748,7 @@ paths:
     post:
       summary: Submit Residency Document Verification
       operationId: v3ResidencyDocumentVerificationEntry
+      x-smile-token-product: residency_document_verification
       tags:
         - Residency Document Verification
       security:
@@ -3268,6 +3282,7 @@ paths:
     post:
       summary: Submit smart selfie compare
       operationId: v3SmartSelfieCompare
+      x-smile-token-product: smart_selfie_compare
       tags:
         - Smart Selfie Compare
       security:
@@ -4004,6 +4019,7 @@ paths:
                     - biometric_kyc
                     - address_verification
                     - document_verification
+                    - residency_document_verification
                     - enhanced_document_verification
                     - enhanced_kyc
                     - phone_number_verification
