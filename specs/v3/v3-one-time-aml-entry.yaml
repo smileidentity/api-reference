@@ -904,8 +904,7 @@ components:
         addresses:
           type: array
           items:
-            type: object
-            additionalProperties: true
+            type: string
         news_summary:
           description: >-
             Per-category summary of the person's news-media exposure. The raw article list the provider returns under `adverse_media` is never included in the callback; a screening whose only hits are news media resolves to `attention` / `news_media_match`.
@@ -922,8 +921,7 @@ components:
         aliases:
           type: array
           items:
-            type: object
-            additionalProperties: true
+            type: string
         associations:
           type: array
           items:
@@ -932,8 +930,7 @@ components:
         dates_of_birth:
           type: array
           items:
-            type: object
-            additionalProperties: true
+            type: string
         enforcement_actions:
           type: array
           items:
@@ -942,8 +939,7 @@ components:
         nationalities:
           type: array
           items:
-            type: object
-            additionalProperties: true
+            type: string
         sanctions:
           type: array
           items:
