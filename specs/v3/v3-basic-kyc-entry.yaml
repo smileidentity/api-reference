@@ -1,0 +1,727 @@
+openapi: 3.0.3
+servers:
+  - url: https://testapi.smileidentity.com
+    description: Sandbox
+  - url: https://api.smileidentity.com
+    description: Production
+x-internal: false
+info:
+  contact:
+    name: Smile ID Support
+    url: https://docs.usesmileid.com
+    email: support@usesmileid.com
+  title: V3 Basic KYC Entry API
+  version: '1.0.0'
+  description: >-
+    Basic KYC endpoints. Basic KYC checks the identity details you submit against the ID authority's record and tells you which of them match. It does not return the record: no name, no date of birth, no photo. Use the Enhanced KYC endpoints if you need the record.
+
+    The async endpoint accepts a request, validates it at entry and processes it in the background, returning HTTP 202 with a job_id and a user_id; the result arrives at your callback URL. The sync endpoint returns the same result in the response.
+
+    Authentication: token-based (token header from /v3/token).
+
+    At least one of `email` or `phone_number` is required.
+
+    Token Payload: Identity fields (country, id_type, id_number, given_names, last_name, email, phone_number, callback_url) and the ISO 27560 consent fields can be bound to the authentication token via the token payload feature at /v3/token (PII fields are held as opaque references, never raw values). When present in the token, these fields are injected automatically and override any values in the request body. Fields provided via the token do not need to be repeated in the request body; GET /v3/services/config lists them as token_provided_fields.
+tags:
+  - name: Basic KYC
+paths:
+  /v3/basic_kyc:
+    post:
+      operationId: submitBasicKyc
+      tags:
+        - Basic KYC
+      security:
+        - SmileIDToken: []
+      summary: Submit Basic KYC verification
+      description: >-
+        Checks the identity details you submit against the relevant ID authority and reports a match verdict per field. Processed asynchronously; the result is delivered to your callback URL.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BasicKycRequest'
+      responses:
+        '202':
+          description: Accepted — verification submitted for async processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptedResponse'
+              example:
+                status: accepted
+                message: Request accepted and queued for processing.
+                job_id: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+                user_id: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+                created_at: '2026-03-10T12:00:00.000Z'
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingCountry:
+                  summary: Missing required field
+                  value:
+                    status: Bad Request
+                    message: "Required field 'country' is missing or invalid."
+                missingCallbackUrl:
+                  summary: Missing callback_url and no default set
+                  value:
+                    status: Bad Request
+                    message: A valid callback_url is required in the request or a default callback URL must be configured in the portal.
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+                invalidEmail:
+                  summary: Invalid email format
+                  value:
+                    status: Bad Request
+                    message: "Field 'email' is invalid."
+                invalidPhone:
+                  summary: Invalid phone number format
+                  value:
+                    status: Bad Request
+                    message: "Field 'phone_number' is invalid."
+                invalidIdFormat:
+                  summary: Invalid ID number format
+                  value:
+                    status: Bad Request
+                    message: Invalid ID number format for the specified country and ID type.
+        '401':
+          description: Unauthorized — invalid or missing authentication credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unauthorized
+                message: Invalid authentication credentials.
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: Insufficient wallet balance.
+        '403':
+          description: Forbidden — partner not authorized for this product, ID type, or IP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                productAccess:
+                  summary: Product not enabled
+                  value:
+                    status: Forbidden
+                    message: Product not enabled for this partner.
+                idTypeDisabled:
+                  summary: ID type not enabled
+                  value:
+                    status: Forbidden
+                    message: ID type not enabled for this partner.
+                productionAccess:
+                  summary: Production access denied
+                  value:
+                    status: Forbidden
+                    message: Production access is not enabled.
+                sdkVersion:
+                  summary: SDK version blocked
+                  value:
+                    status: Forbidden
+                    message: SDK version not allowed.
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '413':
+          description: Content Too Large — an uploaded file exceeds the size limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Content Too Large
+                message: File is too large.
+        '429':
+          description: Too Many Requests — rate limit exceeded for this ID number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: Rate limit exceeded. Please try again later.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Internal Server Error
+                message: An unexpected error occurred. Please try again or contact support.
+  /v3/basic_kyc/sync:
+    post:
+      operationId: submitBasicKycSync
+      tags:
+        - Basic KYC
+      security:
+        - SmileIDToken: []
+      summary: Submit Basic KYC verification synchronously
+      description: >-
+        Runs the same Basic KYC verification as POST /v3/basic_kyc and returns the result in the response instead of delivering it to a callback URL.
+
+        The response body is the same payload that would have been POSTed to your webhook, and it carries the same Response-Signature and Response-Timestamp headers — so existing webhook verification code works against this response unchanged. No webhook is sent, and callback_url is optional and ignored.
+
+        The request body, headers and validation are otherwise identical to the async endpoint, and the job is billed once, exactly as an async job is.
+
+        Because a caller is waiting, this endpoint does not retry internally the way the async one does. A verification that could not be completed is reported with a REST status code rather than a 200 carrying an error status: 424 when the ID authority answered that it was unavailable, 408 when it did not answer inside the request deadline, 500 on an internal failure. In all three the job is recorded and its id is returned in SmileID-Job-ID — read the outcome from GET /v3/status/{jobId} rather than resubmitting, which would run and bill a second lookup.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BasicKycRequest'
+      responses:
+        '200':
+          description: >-
+            Completed — the body is the verification result, byte-for-byte the payload the webhook would have carried for this job. It is the same BasicKycResult schema either way, so the two surfaces cannot describe different things.
+          headers:
+            Response-Signature:
+              description: Signature over the response, verifiable exactly as a webhook signature is.
+              schema:
+                type: string
+            Response-Timestamp:
+              description: Timestamp the signature was computed against.
+              schema:
+                type: string
+                format: date-time
+            SmileID-Job-ID:
+              description: Public Smile job id for this verification.
+              schema:
+                type: string
+            User-ID:
+              description: Partner-facing user id for this verification.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicKycResult'
+        '400':
+          description: Bad Request — validation error in request body or headers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                missingCountry:
+                  summary: Missing or invalid country
+                  value:
+                    status: Bad Request
+                    message: "Required field 'country' is missing or invalid."
+                missingUserDetails:
+                  summary: Missing or invalid user_details
+                  value:
+                    status: Bad Request
+                    message: "Required field 'user_details' is missing or invalid."
+                missingConsent:
+                  summary: Missing consent block
+                  value:
+                    status: Bad Request
+                    message: consent is required
+                missingContact:
+                  summary: Missing email and phone
+                  value:
+                    status: Bad Request
+                    message: Either email or phone_number is required.
+                invalidIdFormat:
+                  summary: id_number does not match the format for this country and ID type
+                  value:
+                    status: Bad Request
+                    message: "Required field 'id_number' is missing or invalid."
+        '401':
+          description: >-
+            Unauthorized — missing, malformed or rejected token. Produced by the API Gateway authorizer before the request reaches the endpoint, so it uses the gateway envelope rather than the endpoint's own error shape. Covers ACCESS_DENIED, MISSING_AUTHENTICATION_TOKEN and UNAUTHORIZED alike.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewayErrorResponse'
+              example:
+                job_id: null
+                message: Missing or invalid authentication credentials.
+                status: unauthorized
+                user_id: null
+        '402':
+          description: Payment Required — insufficient wallet balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Payment Required
+                message: You are out of credits. Add funds to your wallet to run more verifications.
+        '403':
+          description: >-
+            Forbidden — product or ID type not enabled, IP not allowlisted, production access not granted, or a user id conflict between body, header and token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              examples:
+                productNotEnabled:
+                  summary: Basic KYC not enabled for this partner
+                  value:
+                    status: Forbidden
+                    message: This feature requires you to activate ID Validation for your Smile ID account.
+                ipNotAllowed:
+                  summary: Caller IP not on the partner allowlist
+                  value:
+                    status: Forbidden
+                    message: You are not authorized to do that.
+                productionAccess:
+                  summary: Production access not granted
+                  value:
+                    status: Forbidden
+                    message: Production is not enabled for this account. Please complete your KYC with Smile Identity.
+        '408':
+          description: >-
+            Request Timeout — the ID authority did not answer within the request deadline, so no verification was produced. The job is recorded: read its outcome from GET /v3/status/{jobId} using the SmileID-Job-ID header rather than resubmitting.
+          headers:
+            SmileID-Job-ID:
+              description: The Smile job id to poll for this verification.
+              schema:
+                type: string
+                example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Request Timeout
+                message: >-
+                  The ID authority did not respond in time. The job is still recorded — retrieve its result from /v3/status/{job_id}.
+        '413':
+          description: >-
+            Content Too Large — the request exceeded API Gateway's 10 MB payload limit, so it was rejected before reaching the endpoint. Gateway envelope, as with 401.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewayErrorResponse'
+              example:
+                job_id: null
+                message: Request payload too large. Maximum allowed size is 10 MB.
+                status: payload_too_large
+                user_id: null
+        '415':
+          description: Unsupported Media Type — request must be multipart/form-data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Unsupported Media Type
+                message: Unsupported Media Type. Required Content-Type is multipart/form-data
+        '424':
+          description: >-
+            Failed Dependency — the ID authority answered that it was unavailable, so no verification was performed. The message is the one the webhook would have carried. The job is recorded; read its outcome from GET /v3/status/{jobId} rather than resubmitting.
+          headers:
+            SmileID-Job-ID:
+              description: The Smile job id to poll for this verification.
+              schema:
+                type: string
+                example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Failed Dependency
+                message: Unable to verify ID — ID authority unavailable.
+        '429':
+          description: Too Many Requests — rate limit exceeded for this ID number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: Too Many Requests
+                message: >-
+                  This ID number has been blocked due to multiple submissions. Please use the designated endpoint to reactivate it.
+        '500':
+          description: >-
+            Internal Server Error. A verification that could not be completed for an internal reason is reported here rather than as a 200 carrying an error status. As with a 408, the job exists and its outcome can be read from GET /v3/status/{jobId}.
+
+            Two shapes are possible. The endpoint's own body is returned when processing failed after the request was accepted. If API Gateway could not get a usable response from the function at all (crash, out-of-memory, throttling), it substitutes the gateway envelope instead and no SmileID-Job-ID is present.
+          headers:
+            SmileID-Job-ID:
+              description: >-
+                The Smile job id to poll for this verification. Present when the failure happened after the job was created.
+              schema:
+                type: string
+                example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+          content:
+            application/json:
+              schema:
+                # anyOf, not oneOf: the two shapes overlap by design — a gateway body is a valid
+                # ApiErrorResponse with two extra null fields — so "exactly one" can never hold.
+                # The intent is "either of these may arrive", which is what anyOf states.
+                anyOf:
+                  - $ref: '#/components/schemas/ApiErrorResponse'
+                  - $ref: '#/components/schemas/GatewayErrorResponse'
+              examples:
+                endpointFailure:
+                  summary: Processing failed after the request was accepted
+                  value:
+                    status: Internal Server Error
+                    message: An unexpected error occurred. Please try again or contact support.
+                integrationFailure:
+                  summary: API Gateway could not invoke or read the function
+                  value:
+                    job_id: null
+                    message: Backend processing failure. Please retry; contact support if the issue persists.
+                    status: integration_failure
+                    user_id: null
+        '504':
+          description: >-
+            Gateway Timeout — the request exceeded API Gateway's integration timeout, so it was terminated with an AWS-generated body rather than one of ours. The endpoint bounds its own work to return a 408 before this can happen; a 504 means that bound was exceeded. Treat it like a 408: the job may exist, so poll GET /v3/status/{jobId} rather than resubmitting.
+components:
+  securitySchemes:
+    SmileIDToken:
+      type: apiKey
+      in: header
+      name: SmileID-Token
+      description: JWT token obtained from `POST /v3/token`.
+      x-gitbook-token-placeholder: YOUR_GENERATED_TOKEN
+  schemas:
+    BasicKycRequest:
+      type: object
+      required:
+        - country
+        - id_type
+        - id_number
+        - user_details
+        - consent
+      properties:
+        country:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: >-
+            ISO 3166-1 alpha-2 country code (uppercase). Can be provided via the token payload (bound at /v3/token) instead of the request body.
+          example: NG
+        id_type:
+          type: string
+          description: >-
+            ID document type (e.g., NIN, BVN, DRIVERS_LICENSE). Can be provided via the token payload (bound at /v3/token) instead of the request body.
+          example: NIN
+        id_number:
+          type: string
+          description: >-
+            ID document number. Must match the regex format for the country/id_type. Can be provided via the token payload (bound at /v3/token) instead of the request body.
+          example: '12345678901'
+        user_details:
+          type: object
+          required:
+            - given_names
+            - last_name
+          anyOf:
+            - required: [email]
+            - required: [phone_number]
+          description: >-
+            Consumer-stated PII fields for the user. Either email or phone_number must be provided.
+          properties:
+            given_names:
+              type: string
+              minLength: 1
+              description: >-
+                Given names of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
+              example: John
+            last_name:
+              type: string
+              minLength: 1
+              description: >-
+                Last name / surname of the individual. Can be provided via the token payload (bound at /v3/token) instead of the request body.
+              example: Doe
+            email:
+              type: string
+              format: email
+              nullable: true
+              description: >-
+                Email address. At least one of email or phone_number is required. Can be provided via the token payload (bound at /v3/token) instead of the request body.
+              example: john@example.com
+            phone_number:
+              type: string
+              pattern: '^\+[1-9]\d{6,14}$'
+              nullable: true
+              description: Phone number in E.164 format (must start with +). At least one of email or phone_number is required.
+              example: '+2348012345678'
+        consent:
+          $ref: '#/components/schemas/Consent'
+        callback_url:
+          type: string
+          format: uri
+          pattern: '^https://'
+          description: >-
+            URL to receive the async result callback. Falls back to partner default if omitted. Must be on the partner's allowed callback domains list. Can be provided via the token payload (bound at /v3/token) instead of the request body.
+          example: https://example.com/callback
+        bank_code:
+          type: string
+          description: Bank code (required for certain ID types like BANK_ACCOUNT).
+          example: '044'
+        operator:
+          type: string
+          description: Telecom operator (required for certain ID types).
+        partner_params:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value metadata for partner reference.
+          example:
+            order_id: 'ORD-12345'
+        metadata:
+          type: array
+          description: Additional metadata entries.
+          items:
+            type: object
+            required:
+              - name
+              - value
+            properties:
+              name:
+                type: string
+                maxLength: 100
+              value:
+                type: string
+                maxLength: 1000
+    MatchVerdict:
+      type: string
+      description: >-
+        How a single submitted field compared with the ID authority's record. `not_provided` means one side or the other had nothing to compare — the partner did not send the field, or the authority does not hold it.
+      enum: [exact_match, partial_match, transposed, no_match, not_provided]
+      example: exact_match
+    BasicKycResult:
+      type: object
+      description: >-
+        The Basic KYC verification result. This is the body POSTed to your callback URL, returned by POST /v3/basic_kyc/sync, and served by GET /v3/view_callback/{job_id} — one schema for all three.
+
+        There are no identity fields. Basic KYC reports whether the details you submitted match the ID authority's record; it never returns the record.
+      required: [status, message, reason, created_at, product, match_results, user_provided_info, consent]
+      properties:
+        status:
+          type: string
+          enum: [clear, attention, block, error]
+          description: The verification outcome.
+          example: clear
+        message:
+          type: string
+          description: Partner-facing description of the outcome.
+          example: 'Verification successful: exact match.'
+        reason:
+          type: string
+          nullable: true
+          description: >-
+            Why the job landed where it did. Null on a clear outcome. `no_comparable_fields` means the authority confirmed the record but returned no field that could be compared.
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          description: When the verification started.
+          example: '2026-03-10T12:00:00.000Z'
+        completed_at:
+          type: string
+          format: date-time
+          description: When the verification reached its outcome. Absent while a job is still running.
+          example: '2026-03-10T12:00:04.000Z'
+        product:
+          type: string
+          enum: [basic_kyc]
+          description: Always basic_kyc.
+        partner_params:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: The partner_params from the request, echoed back. Null when none were sent.
+        match_results:
+          type: object
+          nullable: true
+          description: >-
+            The verdict per submitted field. Null when the check never produced one — a job that errored, or one rejected for fraud before the authority was called.
+
+            There is no id_number verdict: the id number is the lookup key, so a record that came back is by definition the record for that number.
+
+            In the sandbox these values are synthesised from the test identity you submitted, not from any comparison: a clear identity reports an exact match, a partial-match identity a partial match, a no-match identity a no match, and an identity that stands for an unanswered lookup reports null. They are there so you can see the shape and the field names you will get in production.
+          required: [overall, names, first_name, last_name, other_names, date_of_birth, gender, phone_number, secondary_id_number]
+          properties:
+            overall:
+              allOf:
+                - $ref: '#/components/schemas/MatchVerdict'
+              description: >-
+                The verdict across every field that could be compared, and what drives `status`. `not_provided` when nothing was comparable.
+            names:
+              $ref: '#/components/schemas/MatchVerdict'
+            first_name:
+              $ref: '#/components/schemas/MatchVerdict'
+            last_name:
+              $ref: '#/components/schemas/MatchVerdict'
+            other_names:
+              $ref: '#/components/schemas/MatchVerdict'
+            date_of_birth:
+              $ref: '#/components/schemas/MatchVerdict'
+            gender:
+              $ref: '#/components/schemas/MatchVerdict'
+            phone_number:
+              $ref: '#/components/schemas/MatchVerdict'
+            secondary_id_number:
+              $ref: '#/components/schemas/MatchVerdict'
+        user_provided_info:
+          type: object
+          description: The identity details submitted with the request, echoed back.
+          properties:
+            given_names:
+              type: string
+              nullable: true
+              example: John
+            last_name:
+              type: string
+              nullable: true
+              example: Doe
+            email:
+              type: string
+              nullable: true
+              example: john@example.com
+            phone_number:
+              type: string
+              nullable: true
+              example: '+2348012345678'
+            id_number:
+              type: string
+              nullable: true
+              example: '12345678901'
+        consent:
+          type: object
+          additionalProperties: true
+          description: The ISO 27560 consent record for this verification.
+        antifraud:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Fraud risk score and triggered indicator groups. Null when no risk was scored.
+        device_signals:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: >-
+            Device, fingerprint, location and network signals recorded with the request. Null when the job carried no metadata, and on an errored job.
+        kyc_receipt:
+          type: string
+          nullable: true
+          description: >-
+            Signed link to the PDF receipt for this verification. Present on clear, attention and block outcomes; null otherwise.
+          example: https://portal.usesmileid.com/api/v3/001/job_result_summary/job_01h8x9y2z3a4b5c6d7e8f9g0h1/generate_v3_pdf/live?token=REDACTED
+    Consent:
+      type: object
+      required: [granted, granted_at, notice_language, notice_privacy_policy_url]
+      properties:
+        granted:
+          type: boolean
+          enum: [true]
+          description: Must be true; user has granted consent.
+        granted_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when consent was granted.
+          example: '2026-03-06T12:00:00.000Z'
+        notice_language:
+          type: string
+          minLength: 2
+          maxLength: 2
+          pattern: '^[A-Z]{2}$'
+          description: ISO 639-1 language code of the privacy notice shown, uppercase.
+          example: EN
+        notice_privacy_policy_url:
+          type: string
+          format: uri
+          pattern: '^https://'
+          description: HTTPS URL of the privacy policy notice shown to the user.
+          example: https://example.com/privacy
+    AcceptedResponse:
+      type: object
+      required:
+        - status
+        - message
+        - job_id
+        - user_id
+        - created_at
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+          description: Acceptance status for queued verification requests.
+        message:
+          type: string
+          description: Human-readable acceptance message.
+          example: Request accepted and queued for processing.
+        job_id:
+          type: string
+          description: TypeID format verification identifier for tracking.
+          example: job_01h8x9y2z3a4b5c6d7e8f9g0h1
+        user_id:
+          type: string
+          description: TypeID format user identifier, or partner-provided user identifier.
+          example: user_01h8x9y2z3a4b5c6d7e8f9g0h1
+        created_at:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the verification was created.
+          example: '2026-03-10T12:00:00.000Z'
+    GatewayErrorResponse:
+      type: object
+      description: >-
+        Error envelope produced by API Gateway itself, for requests rejected before they reach the endpoint (authorization, payload limit) or where the function could not be invoked. Carries two always-null fields that the endpoint's own errors omit, so parsers should treat `status` and `message` as the only reliable keys.
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          description: Machine-readable status slug, lower_snake_case.
+          example: unauthorized
+        message:
+          type: string
+          description: Human-readable error message.
+          example: Missing or invalid authentication credentials.
+        job_id:
+          type: string
+          nullable: true
+          description: Always null — no job exists for a request rejected at this layer.
+        user_id:
+          type: string
+          nullable: true
+          description: Always null — no job exists for a request rejected at this layer.
+    ApiErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          description: HTTP status text.
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable error message.
+          example: Invalid request.
