@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [v3.1242.0] - 2026-11-27
+
+### Changed
+- Updated `openapi`
+- Updated `v3-basic-kyc-entry`
+- Updated `v3-enhanced-kyc-entry`
+
+
 ## [v3.1215.0] - 2026-11-19
 
 ### Changed

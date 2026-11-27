@@ -300,7 +300,7 @@ paths:
                   summary: Production access not granted
                   value:
                     status: Forbidden
-                    message: Production is not enabled for this account. Please complete your KYC with Smile Identity.
+                    message: Please fund your wallet and submit your KYC with Smile Identity to proceed. If you have already completed both steps, please reach out to support@usesmileid.com for assistance.
         '408':
           description: >-
             Request Timeout — the ID authority did not answer within the request deadline, so no verification was produced. The job is recorded: read its outcome from GET /v3/status/{jobId} using the SmileID-Job-ID header rather than resubmitting.
